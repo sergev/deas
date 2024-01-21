@@ -56,14 +56,6 @@ hellcurs: hellcurs.o $(LIB)
 hv:     hv.o $(LIB)
 	$(CPLUS) $(CFLAGS) hv.o -o hv $(LIB) $(LIBS)
 
-depend:
-	mkdep $(CFLAGS) *.cc &&\
-	sed '/^###$$/,$$d' Makefile > Makefile~ &&\
-	echo '###' >> Makefile~ &&\
-	cat .depend >> Makefile~ &&\
-	rm .depend &&\
-	mv Makefile~ Makefile
-
 clean:
 	rm -f *.o *.b *.a .,* core a.out hello hv hellcurs
 
@@ -75,15 +67,6 @@ install: $(LIB)
 	chmod 444 /usr/local/lib/$(LIB)
 	install -c -m 444 Screen.h /usr/local/include/Screen.h
 	install -c -m 444 curses.h /usr/local/include/curses.h
-
-dos:
-	rm -rf scrdos scrdos.zip
-	mkdir scrdos
-	cp -p *.c *.cc *.h *.txt scrdos
-	cp -p Makefile.dos scrdos/Makefile
-	cp -p Makefile scrdos/Makefile.unx
-	find scrdos -type f -print | xargs todos
-	zip -rm scrdos scrdos
 
 .SUFFIXES: .cc
 

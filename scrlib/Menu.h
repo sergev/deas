@@ -15,14 +15,14 @@ typedef void (*MenuFunction) ();
 
 class MenuItem {
 private:
-	char *name;                     // name of submenu
+	const char *name;               // name of submenu
 	int width;                      // length of name
 	int hotkey;                     // return key
 	int isactive;                   // is it active for now
 	int istagged;                   // tag of submenu
 	MenuFunction callback;          // function to execute
 public:
-	MenuItem (char *name=0, MenuFunction callback=0);
+	MenuItem (const char *name=0, MenuFunction callback=0);
 	void Display (Screen *scr, int lim, int cur, int c, int i, int d, int l, int li);
 	void Activate (int yes=1) { isactive = yes; }
 	void Deactivate () { Activate (0); }
@@ -36,7 +36,7 @@ public:
 
 class SubMenu {
 private:
-	char *name;                     // name of menu
+	const char *name;               // name of menu
 	int namelen;                    // length of name
 	int hotkey;                     // return key
 	int height;                     // height of submenu window
@@ -46,14 +46,14 @@ private:
 	int nitems;
 	int itemsz;
 public:
-	SubMenu (char *name);
+	SubMenu (const char *name);
 	~SubMenu ();
-	MenuItem *Add (char *name=0, MenuFunction callback=0);
+	MenuItem *Add (const char *name=0, MenuFunction callback=0);
 	void Init ();
 	void SetKey (int key);
 	void Draw (Screen *scr, int row, int col, int c, int i, int d, int l, int li);
 	void Run (Screen *scr, int row, int col, int c, int i, int d, int l, int li);
-	char *Name () { return name; }
+	const char *Name () { return name; }
 	int NameLength () { return namelen; }
 	int HotKey () { return hotkey; }
 	int Current () { return current; }
@@ -77,7 +77,7 @@ public:
 	Menu (int c, int l, int d, int i, int li);
 	~Menu ();
 	void Palette (int c, int l, int i, int li, int di);
-	SubMenu *Add (char *name);
+	SubMenu *Add (const char *name);
 	void Display (Screen *scr, int row);
 	void Run (Screen *scr, int row, int key=-1, int subkey=-1);
 	int Current (int *j=0)

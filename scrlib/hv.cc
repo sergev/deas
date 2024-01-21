@@ -12,24 +12,19 @@
 // or modify this software as long as this message is kept with the software,
 // all derivative works or modified versions.
 //
-extern "C" {
-	#include <sys/types.h>
-	#include <sys/stat.h>
-	#include <stdio.h>
-	#include <stdlib.h>
-	#include <string.h>
-	#include <unistd.h>
-	#include <sys/wait.h>
-	#include <signal.h>
-	extern char **environ;
-	int open (char *, int);
-	int close (int);
-	int read (int, void *, unsigned);
-	void exit (int);
-};
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
 
 #include "Screen.h"
 #include "Menu.h"
+
+extern char **environ;
 
 class HexView {
 public:
@@ -101,7 +96,7 @@ void RunShell ()
 	V.Sync ();
 	V.Restore ();
 
-	char *shell = getenv ("SHELL");
+	const char *shell = getenv ("SHELL");
 	if (! shell || *shell != '/')
 		shell = "/bin/sh";
 	int t = fork ();
@@ -118,7 +113,7 @@ void RunShell ()
 	if (t > 0) {
 		#ifdef SIGTSTP
 		// Игнорируем suspend, пока ждем завершения шелла.
-		void *oldtstp = signal (SIGTSTP, SIG_IGN);
+		auto *oldtstp = signal (SIGTSTP, SIG_IGN);
 		#endif
 
 		// Ждем, пока он не отпадет.
@@ -228,9 +223,9 @@ void HexView::Run ()
 			case meta ('I'):        // f9 - menu
                                 M.Run (&V, 0);
 				continue;
-			case meta ('B'):        // f2 - goto
+			case meta ('B'): {      // f2 - goto
 				char gotobuf [16];
-				sprintf (gotobuf, "%08lx", bn*bsz);
+				snprintf (gotobuf, sizeof(gotobuf), "%08lx", bn*bsz);
 				char *p = V.GetString (8, gotobuf, " Goto ",
 					"Go to offset", PopupColor, PopupInverse);
 				if (! p)
@@ -244,6 +239,7 @@ void HexView::Run ()
 				}
 				bn = (off + bsz - 1) / bsz;
 				break;
+                        }
 			default:
 				V.Beep ();
 				continue;
@@ -263,14 +259,14 @@ void HexView::Run ()
 				case charMode:  mode = byteMode; break;
 				}
 				break;
-			case meta ('E'):        // f5 - block size
+			case meta ('E'): {      // f5 - block size
 				char sizebuf [16];
-				sprintf (sizebuf, "%07lx", bsz);
-				p = V.GetString (7, sizebuf, " Block ",
+				snprintf (sizebuf, sizeof(sizebuf), "%07lx", bsz);
+				auto *p = V.GetString (7, sizebuf, " Block ",
 					"Set block size", PopupColor, PopupInverse);
 				if (! p)
 					continue;
-				off = bn * bsz;
+				auto off = bn * bsz;
 				sscanf (p, "%lx", &bsz);
 				if (flen == (unsigned long) -1L)
 					bsz = (bsz + minbsz - 1) / minbsz * minbsz;
@@ -283,6 +279,7 @@ void HexView::Run ()
 				if (bn>=nb && nb>0)
 					bn = nb - 1;
 				break;
+                        }
 			case cntrl ('C'):
 			case cntrl ('['):
 			case meta ('J'):        // f10 - quit
@@ -329,7 +326,7 @@ void HexView::Run ()
 					continue;
 				bn = nb - (V.Lines-2);
 				break;
-			case meta ('G'):        // f7 - search
+			case meta ('G'): {      // f7 - search
 //                              char *p = getstring (SEARCHSZ-1, searchstr,
 //                                      " Search ", "Search for the string");
 //                              if (! p)
@@ -351,6 +348,7 @@ void HexView::Run ()
 //                              }
 //                              sline = -1;
 				continue;
+                        }
 			}
 			break;
 		}
@@ -386,7 +384,7 @@ void HexView::ViewLine (int b, int i)
 	else {
 		for (int i=0; i<n && i<V.Columns; ++i) {
 			switch (mode) {
-			case byteMode:
+			case byteMode: {
 				if (V.Col () >= V.Columns - 4)
 					break;
 				int c = buf [i];
@@ -394,6 +392,7 @@ void HexView::ViewLine (int b, int i)
 				V.Put ("0123456789abcdef" [c&0xf], NormalColor);
 				V.Put (' ', NormalColor);
 				continue;
+                        }
 			case shortMode:
 				if (V.Col () >= V.Columns - 6)
 					break;

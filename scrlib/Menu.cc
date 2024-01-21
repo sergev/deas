@@ -15,9 +15,9 @@
 #include "Menu.h"
 #include "extern.h"
 
-static void displayName (Screen *scr, char *name, int normal, int bold)
+static void displayName (Screen *scr, const char *name, int normal, int bold)
 {
-	for (char *p=name; *p; ++p)
+	for (auto *p=name; *p; ++p)
 		if (*p == '~') {
 			scr->Put (*++p, bold);
 		} else
@@ -63,7 +63,7 @@ Menu::~Menu ()
 		delete column;
 }
 
-SubMenu *Menu::Add (char *name)
+SubMenu *Menu::Add (const char *name)
 {
 	if (! menusz) {
 		menusz = 8;
@@ -162,12 +162,12 @@ void Menu::Run (Screen *scr, int row, int key, int subkey)
 	}
 }
 
-SubMenu::SubMenu (char *n)
+SubMenu::SubMenu (const char *n)
 {
 	name = n;
 	namelen = strlen (name) + 2;
 	hotkey = 0;
-	char *p = strchr (name, '~');
+	auto *p = strchr (name, '~');
 	if (p) {
 		hotkey = lowercase (p[1]);
 		--namelen;
@@ -184,7 +184,7 @@ SubMenu::~SubMenu ()
 		delete item;
 }
 
-MenuItem *SubMenu::Add (char *name, MenuFunction callback)
+MenuItem *SubMenu::Add (const char *name, MenuFunction callback)
 {
 	if (! itemsz) {
 		itemsz = 8;
@@ -223,7 +223,7 @@ void SubMenu::Init ()
 	width += 2;
 }
 
-MenuItem::MenuItem (char *n, MenuFunction cb)
+MenuItem::MenuItem (const char *n, MenuFunction cb)
 {
 	name = n;
 	callback = cb;
@@ -233,7 +233,7 @@ MenuItem::MenuItem (char *n, MenuFunction cb)
 	width = 4;
 	if (name) {
 		width += strlen (name);
-		char *p = strchr (name, '~');
+		auto *p = strchr (name, '~');
 		if (p) {
 			hotkey = lowercase (p[1]);
 			--width;

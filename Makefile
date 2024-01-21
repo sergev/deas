@@ -1,127 +1,28 @@
-CFLAGS  = -O -g -Wall -Iscrlib -Ipgplib
-CXXFLAGS  = -std=c++20 -O -g -Wall -Iscrlib -Ipgplib
-CRFLAGS = $(CFLAGS) -fpic
-LDFLAGS = -g -ltermcap
-CRYPT   = pgplib/libpgp.a
-#CRYPT   = cryptnul.o
-LIBS    = scrlib/libscr.a pgplib/libpgp.a
-OBJS    = main.o help.o users.o accounts.o journal.o entries.o lib.o util.o
-ROBJS   = main.o help.o users.o accounts.o journal.o entries.o lib$(PROG).a
-DOBJS   = server.o lib.o util.o $(CRYPT)
-LOBJS   = client.o util.o
-LROBJS  = client.ro util.ro
-PROG    = deas
+#
+# make
+# make all      -- build everything
+#
+# make test     -- run unit tests
+#
+# make install  -- install binaries to /usr/local
+#
+# make clean    -- remove build files
+#
 
-all:    l$(PROG) $(PROG) $(PROG)d $(PROG)ctl lib$(PROG).a lib$(PROG).ra #python/$(PROG)module.so
+all:    build
+	$(MAKE) -C build $@
 
-l$(PROG): $(OBJS) $(LIBS)
-	$(CXX) $(LDFLAGS) $(OBJS) -o l$(PROG) $(LIBS)
+test:   build
+	$(MAKE) -C build test
 
-$(PROG): $(ROBJS) $(LIBS)
-	$(CXX) $(LDFLAGS) $(ROBJS) -o $(PROG) $(LIBS)
-
-$(PROG)d: $(DOBJS)
-	$(CXX) $(LDFLAGS) $(DOBJS) -o $(PROG)d
-
-lib$(PROG).a: $(LOBJS)
-	[ "$?" != "" ] && ar r lib$(PROG).a $? && ranlib lib$(PROG).a
-
-lib$(PROG).ra: $(LROBJS)
-	[ "$?" != "" ] && ar r lib$(PROG).ra $? && ranlib lib$(PROG).ra
-
-$(PROG)ctl: $(PROG)ctl.o $(LIBS)
-	$(CC) $(CFLAGS) $(PROG)ctl.o $(LIBS) -o $(PROG)ctl
-
-$(PROG).pgp:
-	rm -f $(PROG).pgp
-	pgp -kx vak $(PROG).pgp $(HOME)/.pgp/secring.pgp
-	pgp -kx vsk $(PROG).pgp $(HOME)/.pgp/secring.pgp
-	pgp -kx sak $(PROG).pgp $(HOME)/.pgp/secring.pgp
-	pgp -kx vav $(PROG).pgp $(HOME)/.pgp/secring.pgp
-	pgp -kx andrew $(PROG).pgp $(HOME)/.pgp/secring.pgp
-	pgp -kx group1 $(PROG).pgp $(HOME)/.pgp/secring.pgp
-	pgp -kx group2 $(PROG).pgp $(HOME)/.pgp/secring.pgp
-	pgp -kx group3 $(PROG).pgp $(HOME)/.pgp/secring.pgp
-	pgp -kx $(PROG) $(PROG).pgp $(HOME)/.pgp/secring.pgp
+install: build
+	$(MAKE) -C build $@
 
 clean:
-	rm -f *.[oba] *.r[oa] z $(PROG) l$(PROG) r$(PROG) $(PROG)d $(PROG)ctl
-	cd scrlib && make clean
-	cd pgplib && make clean
-	#cd python && make clean
+	rm -rf build
 
-depend:
-	mkdep $(CFLAGS) *.c *.cc &&\
-	sed '/^###$$/,$$d' Makefile > Makefile~ &&\
-	echo '###' >> Makefile~ &&\
-	cat .depend >> Makefile~ &&\
-	rm .depend &&\
-	mv Makefile~ Makefile
+build:
+	mkdir $@
+	cmake -B $@ .
 
-scrlib/libscr.a:
-	cd scrlib && make
-
-pgplib/libpgp.a:
-	cd pgplib && make
-
-python/$(PROG)module.so:
-	cd python && make
-
-install: /usr/local/etc/$(PROG)d /usr/local/bin/$(PROG) /usr/local/bin/l$(PROG)\
-	/usr/local/etc/$(PROG)ctl /usr/local/etc/chk$(PROG)
-	/usr/local/bin/$(PROG)backup /usr/local/bin/$(PROG)restore\
-	#/usr/local/lib/python/$(PROG)module.so
-
-/usr/local/bin/$(PROG): $(PROG)
-	install -c -s $(PROG) /usr/local/bin/$(PROG)
-
-/usr/local/bin/$(PROG)backup: backup.py
-	install -c backup.py /usr/local/bin/$(PROG)backup
-
-/usr/local/bin/$(PROG)restore: restore.py
-	install -c restore.py /usr/local/bin/$(PROG)restore
-
-/usr/local/bin/l$(PROG): l$(PROG)
-	install -c -s l$(PROG) /usr/local/bin/l$(PROG)
-
-/usr/local/etc/$(PROG)d: $(PROG)d
-	install -c -s $(PROG)d /usr/local/etc/$(PROG)d
-
-/usr/local/etc/$(PROG)ctl: $(PROG)ctl
-	install -c -s $(PROG)ctl /usr/local/etc/$(PROG)ctl
-
-/usr/local/etc/chk$(PROG): chk$(PROG)
-	install -c chk$(PROG) /usr/local/etc/chk$(PROG)
-
-/usr/local/lib/python/$(PROG)module.so: python/$(PROG)module.so
-	install -c python/$(PROG)module.so /usr/local/lib/python/$(PROG)module.so
-
-.SUFFIXES: .ro
-
-.c.ro:
-	$(CC) $(CRFLAGS) -c $< -o $*.ro
-
-dos:
-	rm -rf $(PROG)dos $(PROG)dos.zip
-	mkdir $(PROG)dos
-	find . -type f ! -path ./python\* -print | tar cfT - - | (cd $(PROG)dos; tar xf -)
-	tar czf $(PROG)dos/python.tgz python
-	for i in $(PROG)dos/Makefile $(PROG)dos/*/Makefile; do\
-		mv $$i $$i.unx; done
-	for i in $(PROG)dos/Makefile.dos $(PROG)dos/*/Makefile.dos; do\
-		mv $$i `dirname $$i`/`basename $$i .dos`; done
-	 find $(PROG)dos -type f ! -name \*.dat ! -name \*.pgp ! -name \*.lib ! -name \*.tgz ! -name \*.exe -print | xargs todos
-	 zip -rm $(PROG)dos $(PROG)dos
-
-###
-client.o: client.c deas.h pgplib/pgplib.h
-deasctl.o: deasctl.c deas.h pgplib/pgplib.h
-lib.o: lib.c deas.h pgplib/pgplib.h
-server.o: server.c deas.h pgplib/pgplib.h
-util.o: util.c deas.h
-accounts.o: accounts.cc scrlib/Screen.h scrlib/Dialog.h deas.h
-entries.o: entries.cc scrlib/Screen.h scrlib/Dialog.h deas.h
-help.o: help.cc scrlib/Screen.h
-journal.o: journal.cc scrlib/Screen.h scrlib/Dialog.h deas.h
-main.o: main.cc scrlib/Screen.h scrlib/Popup.h scrlib/Dialog.h deas.h
-users.o: users.cc scrlib/Screen.h deas.h
+.PHONY: clean test install

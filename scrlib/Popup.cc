@@ -233,7 +233,7 @@ char *Screen::editString (int r, int c, int w, char *str, int cp, int color)
 	}
 }
 
-char *Screen::GetString (int w, char *str, char *head, char *mesg, int color, int inverse)
+char *Screen::GetString (int w, const char *str, const char *head, const char *mesg, int color, int inverse)
 {
 	int len = strlen (mesg);
 	if (len > w)
@@ -261,9 +261,9 @@ char *Screen::GetString (int w, char *str, char *head, char *mesg, int color, in
 	static char buf [129];
 	strncpy (buf, str ? str : "", 80);
 
-	str = editString (r+2, c+2, w-4, buf, 0, inverse);
+	auto *result = editString (r+2, c+2, w-4, buf, 0, inverse);
 	Put (box);
-	return (str);
+	return (result);
 }
 
 // Отрисовка мультистроки в popup-окне с задержкой ввода.

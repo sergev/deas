@@ -231,7 +231,7 @@ public:
 	void Error (int c, int i, const char *head, const char *reply, const char *s, ...);
 	int Popup (const char *head, const char *mesg, const char *mesg2,
 		const char *c1, const char *c2, const char *c3, int c, int i);
-	char *GetString (int w, char *str, char *head, char *mesg,
+	char *GetString (int w, const char *str, const char *head, const char *mesg,
 		int c, int i);
 	void PopupString (const char *title, const char *str, const char *reply,
 		int color, int inverse);
