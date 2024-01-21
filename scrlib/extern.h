@@ -15,21 +15,24 @@
 #include <string.h>
 #include <unistd.h>
 
-inline void outerr (const char *str) { write (2, str, strlen (str)); }
-
-inline char *strdup (const char *str)
+inline void outerr(const char *str)
 {
-	int len = strlen (str) + 1;
-	char *copy = new char [len];
-	if (copy)
-		memcpy (copy, str, len);
-	return (copy);
+    write(2, str, strlen(str));
 }
 
-inline int lowercase (int c)
+inline char *strdup(const char *str)
 {
-	if (c>='A' && c<='Z')
-		return (c+'a'-'A');
+    int len = strlen(str) + 1;
+    char *copy = new char[len];
+    if (copy)
+        memcpy(copy, str, len);
+    return (copy);
+}
+
+inline int lowercase(int c)
+{
+    if (c >= 'A' && c <= 'Z')
+        return (c + 'a' - 'A');
 #if 0
         // TODO: utf-8
 	switch (c) {
@@ -67,5 +70,5 @@ inline int lowercase (int c)
 	case 'Я': return ('я');
 	}
 #endif
-	return (c);
+    return (c);
 }

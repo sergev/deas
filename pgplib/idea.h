@@ -12,7 +12,7 @@
 #define IDEABLOCKSIZE 8
 
 #define IDEAROUNDS 8
-#define IDEAKEYLEN (6*IDEAROUNDS+4)
+#define IDEAKEYLEN (6 * IDEAROUNDS + 4)
 
 /*
  * iv[] is used as a circular buffer.  bufleft is the number of
@@ -26,29 +26,26 @@
  * unusual) way of doing CFB encryption.
  */
 struct IdeaCfbContext {
-	byte oldcipher[8];
-	byte iv[8];
-	word16 key[IDEAKEYLEN];
-	int bufleft;
+    byte oldcipher[8];
+    byte iv[8];
+    word16 key[IDEAKEYLEN];
+    int bufleft;
 };
 
 struct IdeaRandContext {
-	byte outbuf[8];
-	word16 key[IDEAKEYLEN];
-	int bufleft;
-	byte internalbuf[8];
+    byte outbuf[8];
+    word16 key[IDEAKEYLEN];
+    int bufleft;
+    byte internalbuf[8];
 };
 
 void ideaCfbReinit(struct IdeaCfbContext *context, byte const *iv);
-void ideaCfbInit(struct IdeaCfbContext *context, byte const (key[16]));
+void ideaCfbInit(struct IdeaCfbContext *context, byte const(key[16]));
 void ideaCfbSync(struct IdeaCfbContext *context);
 void ideaCfbDestroy(struct IdeaCfbContext *context);
-void ideaCfbEncrypt(struct IdeaCfbContext *context,
-		    byte const *src, byte *dest, int count);
-void ideaCfbDecrypt(struct IdeaCfbContext *context,
-		    byte const *src, byte *dest, int count);
-void ideaRandInit(struct IdeaRandContext *context, byte const (key[16]),
-		  byte const (seed[8]));
+void ideaCfbEncrypt(struct IdeaCfbContext *context, byte const *src, byte *dest, int count);
+void ideaCfbDecrypt(struct IdeaCfbContext *context, byte const *src, byte *dest, int count);
+void ideaRandInit(struct IdeaRandContext *context, byte const(key[16]), byte const(seed[8]));
 byte ideaRandByte(struct IdeaRandContext *c);
 void ideaRandWash(struct IdeaRandContext *c, struct IdeaCfbContext *cfb);
 void ideaRandState(struct IdeaRandContext *c, byte key[16], byte seed[8]);

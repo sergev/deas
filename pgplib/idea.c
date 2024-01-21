@@ -1,10 +1,10 @@
 /*
  *    idea.c - C source code for IDEA block cipher.
- *      IDEA (International Data Encryption Algorithm), formerly known as 
+ *      IDEA (International Data Encryption Algorithm), formerly known as
  *      IPES (Improved Proposed Encryption Standard).
  *      Algorithm developed by Xuejia Lai and James L. Massey, of ETH Zurich.
- *      This implementation modified and derived from original C code 
- *      developed by Xuejia Lai.  
+ *      This implementation modified and derived from original C code
+ *      developed by Xuejia Lai.
  *      Zero-based indexing added, names changed from IPES to IDEA.
  *      CFB functions added.  Random number routines added.
  *
@@ -36,10 +36,10 @@
  *      Profos, Ascom Tech AG, Solothurn Lab, Postfach 151, 4502 Solothurn,
  *      Switzerland, Tel +41 65 242885, Fax +41 65 235761.
  *
- *      The IDEA block cipher uses a 64-bit block size, and a 128-bit key 
+ *      The IDEA block cipher uses a 64-bit block size, and a 128-bit key
  *      size.  It breaks the 64-bit cipher block into four 16-bit words
- *      because all of the primitive inner operations are done with 16-bit 
- *      arithmetic.  It likewise breaks the 128-bit cipher key into eight 
+ *      because all of the primitive inner operations are done with 16-bit
+ *      arithmetic.  It likewise breaks the 128-bit cipher key into eight
  *      16-bit words.
  *
  *      For further information on the IDEA cipher, see the book:
@@ -54,8 +54,10 @@
  *      native CPU.
  */
 
-#include <string.h>
 #include "idea.h"
+
+#include <string.h>
+
 #include "randpool.h"
 
 #ifdef MACTC5
@@ -63,15 +65,14 @@
 #define IDEA32
 #define SMALL_CACHE
 #define USE68ASM
-void ideaCipher(byte const inbuf[8], byte outbuf[8],
-		       word16 const *key);
+void ideaCipher(byte const inbuf[8], byte outbuf[8], word16 const *key);
 #endif
 
-#ifdef IDEA32			/* Use >16-bit temporaries */
+#ifdef IDEA32 /* Use >16-bit temporaries */
 #define low16(x) ((x) & 0xFFFF)
-typedef unsigned int uint16;	/* at LEAST 16 bits, maybe more */
+typedef unsigned int uint16; /* at LEAST 16 bits, maybe more */
 #else
-#define low16(x) (x)		/* this is only ever applied to uint16's */
+#define low16(x) (x) /* this is only ever applied to uint16's */
 typedef word16 uint16;
 #endif
 
@@ -93,9 +94,9 @@ typedef word16 uint16;
 #ifdef SMALL_CACHE
 #ifdef MACTC5
 
-CONST static uint16 
-mul(uint16 a, uint16 b) {
-asm {
+CONST static uint16 mul(uint16 a, uint16 b)
+{
+    asm {
 		move.w	a,d1
 		beq.s	@aeq0
 		move.w	b,d0
@@ -113,80 +114,79 @@ asm {
 		bra.s	@endit
 @beq0:	moveq	#1,d0
 		sub.w	d1,d0	; 1 - a
-		}
-endit:	return;
+    }
+endit:
+    return;
 }
 
 #else
 
-CONST static uint16
- mul(register uint16 a, register uint16 b)
+CONST static uint16 mul(register uint16 a, register uint16 b)
 {
     register word32 p;
 
-    p = (word32) a *b;
+    p = (word32)a * b;
     if (p) {
-	b = low16(p);
-	a = p >> 16;
-	return (b - a) + (b < a);
+        b = low16(p);
+        a = p >> 16;
+        return (b - a) + (b < a);
     } else if (a) {
-	return 1 - a;
+        return 1 - a;
     } else {
-	return 1 - b;
+        return 1 - b;
     }
-}				/* mul */
-#endif			/* MACTC5 */
-#endif			/* SMALL_CACHE */
+} /* mul */
+#endif /* MACTC5 */
+#endif /* SMALL_CACHE */
 
 /*
  * Compute the multiplicative inverse of x, modulo 65537, using Euclid's
  * algorithm. It is unrolled twice to avoid swapping the registers each
  * iteration, and some subtracts of t have been changed to adds.
  */
-CONST static uint16
- mulInv(uint16 x)
+CONST static uint16 mulInv(uint16 x)
 {
     uint16 t0, t1;
     uint16 q, y;
 
     if (x <= 1)
-	return x;		/* 0 and 1 are self-inverse */
-    t1 = 0x10001L / x;		/* Since x >= 2, this fits into 16 bits */
+        return x;      /* 0 and 1 are self-inverse */
+    t1 = 0x10001L / x; /* Since x >= 2, this fits into 16 bits */
     y = 0x10001L % x;
     if (y == 1)
-	return low16(1 - t1);
+        return low16(1 - t1);
     t0 = 1;
     do {
-	q = x / y;
-	x = x % y;
-	t0 += q * t1;
-	if (x == 1)
-	    return t0;
-	q = y / x;
-	y = y % x;
-	t1 += q * t0;
+        q = x / y;
+        x = x % y;
+        t0 += q * t1;
+        if (x == 1)
+            return t0;
+        q = y / x;
+        y = y % x;
+        t1 += q * t0;
     } while (y != 1);
     return low16(1 - t1);
-}				/* mukInv */
+} /* mukInv */
 
 /*
  * Expand a 128-bit user key to a working encryption key EK
  */
-static void ideaExpandKey(byte const *userkey, word16 * EK)
+static void ideaExpandKey(byte const *userkey, word16 *EK)
 {
     int i, j;
 
     for (j = 0; j < 8; j++) {
-	EK[j] = (userkey[0] << 8) + userkey[1];
-	userkey += 2;
+        EK[j] = (userkey[0] << 8) + userkey[1];
+        userkey += 2;
     }
     for (i = 0; j < IDEAKEYLEN; j++) {
-	i++;
-	EK[i + 7] = EK[i & 7] << 9 | EK[i + 1 & 7] >> 7;
-	EK += i & 8;
-	i &= 7;
+        i++;
+        EK[i + 7] = EK[i & 7] << 9 | EK[i + 1 & 7] >> 7;
+        EK += i & 8;
+        i &= 7;
     }
-}				/* ideaExpandKey */
+} /* ideaExpandKey */
 
 /*
  * Compute IDEA decryption key DK from an expanded IDEA encryption key EK
@@ -209,17 +209,17 @@ static void ideaInvertKey(word16 const *EK, word16 DK[IDEAKEYLEN])
     *--p = t1;
 
     for (i = 0; i < IDEAROUNDS - 1; i++) {
-	t1 = *EK++;
-	*--p = *EK++;
-	*--p = t1;
+        t1 = *EK++;
+        *--p = *EK++;
+        *--p = t1;
 
-	t1 = mulInv(*EK++);
-	t2 = -*EK++;
-	t3 = -*EK++;
-	*--p = mulInv(*EK++);
-	*--p = t2;
-	*--p = t3;
-	*--p = t1;
+        t1 = mulInv(*EK++);
+        t2 = -*EK++;
+        t3 = -*EK++;
+        *--p = mulInv(*EK++);
+        *--p = t2;
+        *--p = t3;
+        *--p = t1;
     }
     t1 = *EK++;
     *--p = *EK++;
@@ -232,55 +232,46 @@ static void ideaInvertKey(word16 const *EK, word16 DK[IDEAKEYLEN])
     *--p = t3;
     *--p = t2;
     *--p = t1;
-/* Copy and destroy temp copy */
+    /* Copy and destroy temp copy */
     memcpy(DK, temp, sizeof(temp));
     burn(temp);
-}				/* ideaInvertKey */
+} /* ideaInvertKey */
 
 /*
- * MUL(x,y) computes x = x*y, modulo 0x10001.  Requires two temps, 
+ * MUL(x,y) computes x = x*y, modulo 0x10001.  Requires two temps,
  * t16 and t32.  x is modified, and must be a side-effect-free lvalue.
- * y may be anything, but unlike x, must be strictly less than 65536 
+ * y may be anything, but unlike x, must be strictly less than 65536
  * even if low16() is #defined.
  * All of these are equivalent - see which is faster on your machine
  */
 #ifdef SMALL_CACHE
-#define MUL(x,y) (x = mul(low16(x),y))
-#else				/* !SMALL_CACHE */
+#define MUL(x, y) (x = mul(low16(x), y))
+#else /* !SMALL_CACHE */
 #ifdef AVOID_JUMPS
-#define MUL(x,y) (x = low16(x-1), t16 = low16((y)-1), \
-		t32 = (word32)x*t16 + x + t16, x = low16(t32), \
-		t16 = t32>>16, x = (x-t16) + (x<t16) + 1)
-#else				/* !AVOID_JUMPS (default) */
-#define MUL(x,y) \
-	((t16 = (y)) ? \
-		(x=low16(x)) ? \
-			t32 = (word32)x*t16, \
-			x = low16(t32), \
-			t16 = t32>>16, \
-			x = (x-t16)+(x<t16) \
-		: \
-			(x = 1-t16) \
-	: \
-		(x = 1-x))
+#define MUL(x, y)                                                                           \
+    (x = low16(x - 1), t16 = low16((y)-1), t32 = (word32)x * t16 + x + t16, x = low16(t32), \
+     t16 = t32 >> 16, x = (x - t16) + (x < t16) + 1)
+#else /* !AVOID_JUMPS (default) */
+#define MUL(x, y)                                                                           \
+    ((t16 = (y)) ? (x = low16(x)) ? t32 = (word32)x * t16, x = low16(t32), t16 = t32 >> 16, \
+     x = (x - t16) + (x < t16) : (x = 1 - t16) : (x = 1 - x))
 #endif
 #endif
 
 /*      IDEA encryption/decryption algorithm */
 /* Note that in and out can be the same buffer */
 #ifndef USE68ASM
-static void ideaCipher(byte const inbuf[8], byte outbuf[8],
-		       word16 const *key)
+static void ideaCipher(byte const inbuf[8], byte outbuf[8], word16 const *key)
 {
     register uint16 x1, x2, x3, x4, s2, s3;
     word16 *in, *out;
 #ifndef SMALL_CACHE
-    register uint16 t16;	/* Temporaries needed by MUL macro */
+    register uint16 t16; /* Temporaries needed by MUL macro */
     register word32 t32;
 #endif
     int r = IDEAROUNDS;
 
-    in = (word16 *) inbuf;
+    in = (word16 *)inbuf;
     x1 = *in++;
     x2 = *in++;
     x3 = *in++;
@@ -292,38 +283,38 @@ static void ideaCipher(byte const inbuf[8], byte outbuf[8],
     x4 = (x4 >> 8) | (x4 << 8);
 #endif
     do {
-	MUL(x1, *key++);
-	x2 += *key++;
-	x3 += *key++;
-	MUL(x4, *key++);
+        MUL(x1, *key++);
+        x2 += *key++;
+        x3 += *key++;
+        MUL(x4, *key++);
 
-	s3 = x3;
-	x3 ^= x1;
-	MUL(x3, *key++);
-	s2 = x2;
-	x2 ^= x4;
-	x2 += x3;
-	MUL(x2, *key++);
-	x3 += x2;
+        s3 = x3;
+        x3 ^= x1;
+        MUL(x3, *key++);
+        s2 = x2;
+        x2 ^= x4;
+        x2 += x3;
+        MUL(x2, *key++);
+        x3 += x2;
 
-	x1 ^= x2;
-	x4 ^= x3;
+        x1 ^= x2;
+        x4 ^= x3;
 
-	x2 ^= s3;
-	x3 ^= s2;
+        x2 ^= s3;
+        x3 ^= s2;
     } while (--r);
     MUL(x1, *key++);
     x3 += *key++;
     x2 += *key++;
     MUL(x4, *key);
 
-    out = (word16 *) outbuf;
+    out = (word16 *)outbuf;
 #ifdef HIGHFIRST
     *out++ = x1;
     *out++ = x3;
     *out++ = x2;
     *out = x4;
-#else				/* !HIGHFIRST */
+#else /* !HIGHFIRST */
     x1 = low16(x1);
     x2 = low16(x2);
     x3 = low16(x3);
@@ -333,8 +324,8 @@ static void ideaCipher(byte const inbuf[8], byte outbuf[8],
     *out++ = (x2 >> 8) | (x2 << 8);
     *out = (x4 >> 8) | (x4 << 8);
 #endif
-}				/* ideaCipher */
-#endif			/* USE68ASM */
+} /* ideaCipher */
+#endif /* USE68ASM */
 
 /*-------------------------------------------------------------*/
 
@@ -350,11 +341,11 @@ static void ideaCipher(byte const inbuf[8], byte outbuf[8],
 #ifndef KBYTES
 #define KBYTES 1024
 #endif
-#define BLOCKS (64*KBYTES)
+#define BLOCKS (64 * KBYTES)
 #endif
 
 int main(void)
-{				/* Test driver for IDEA cipher */
+{ /* Test driver for IDEA cipher */
     int i, j, k;
     byte userkey[16];
     word16 EK[IDEAKEYLEN], DK[IDEAKEYLEN];
@@ -364,47 +355,47 @@ int main(void)
 
     /* Make a sample user key for testing... */
     for (i = 0; i < 16; i++)
-	userkey[i] = i + 1;
+        userkey[i] = i + 1;
 
     /* Compute encryption subkeys from user key... */
     ideaExpandKey(userkey, EK);
     printf("\nEncryption key subblocks: ");
     for (j = 0; j < IDEAROUNDS + 1; j++) {
-	printf("\nround %d:   ", j + 1);
-	if (j < IDEAROUNDS)
-	    for (i = 0; i < 6; i++)
-		printf(" %6u", EK[j * 6 + i]);
-	else
-	    for (i = 0; i < 4; i++)
-		printf(" %6u", EK[j * 6 + i]);
+        printf("\nround %d:   ", j + 1);
+        if (j < IDEAROUNDS)
+            for (i = 0; i < 6; i++)
+                printf(" %6u", EK[j * 6 + i]);
+        else
+            for (i = 0; i < 4; i++)
+                printf(" %6u", EK[j * 6 + i]);
     }
 
     /* Compute decryption subkeys from encryption subkeys... */
     ideaInvertKey(EK, DK);
     printf("\nDecryption key subblocks: ");
     for (j = 0; j < IDEAROUNDS + 1; j++) {
-	printf("\nround %d:   ", j + 1);
-	if (j < IDEAROUNDS)
-	    for (i = 0; i < 6; i++)
-		printf(" %6u", DK[j * 6 + i]);
-	else
-	    for (i = 0; i < 4; i++)
-		printf(" %6u", DK[j * 6 + i]);
+        printf("\nround %d:   ", j + 1);
+        if (j < IDEAROUNDS)
+            for (i = 0; i < 6; i++)
+                printf(" %6u", DK[j * 6 + i]);
+        else
+            for (i = 0; i < 4; i++)
+                printf(" %6u", DK[j * 6 + i]);
     }
 
     /* Make a sample plaintext pattern for testing... */
     for (k = 0; k < 8; k++)
-	XX[k] = k;
+        XX[k] = k;
 
     printf("\n Encrypting %d bytes (%ld blocks)...", BLOCKS * 16, BLOCKS);
     fflush(stdout);
     start = clock();
     memcpy(YY, XX, 8);
     for (l = 0; l < BLOCKS; l++)
-	ideaCipher(YY, YY, EK);	/* repeated encryption */
+        ideaCipher(YY, YY, EK); /* repeated encryption */
     memcpy(ZZ, YY, 8);
     for (l = 0; l < BLOCKS; l++)
-	ideaCipher(ZZ, ZZ, DK);	/* repeated decryption */
+        ideaCipher(ZZ, ZZ, DK); /* repeated decryption */
     end = clock() - start;
     l = end / (CLOCKS_PER_SEC / 1000) + 1;
     i = l / 1000;
@@ -412,34 +403,33 @@ int main(void)
     l = (16 * BLOCKS * (CLOCKS_PER_SEC / 1000)) / (end / 1000);
     printf("%d.%03d seconds = %ld bytes per second\n", i, j, l);
 
-    printf("\nX %3u  %3u  %3u  %3u  %3u  %3u  %3u %3u\n",
-	   XX[0], XX[1], XX[2], XX[3], XX[4], XX[5], XX[6], XX[7]);
-    printf("\nY %3u  %3u  %3u  %3u  %3u  %3u  %3u %3u\n",
-	   YY[0], YY[1], YY[2], YY[3], YY[4], YY[5], YY[6], YY[7]);
-    printf("\nZ %3u  %3u  %3u  %3u  %3u  %3u  %3u %3u\n",
-	   ZZ[0], ZZ[1], ZZ[2], ZZ[3], ZZ[4], ZZ[5], ZZ[6], ZZ[7]);
+    printf("\nX %3u  %3u  %3u  %3u  %3u  %3u  %3u %3u\n", XX[0], XX[1], XX[2], XX[3], XX[4], XX[5],
+           XX[6], XX[7]);
+    printf("\nY %3u  %3u  %3u  %3u  %3u  %3u  %3u %3u\n", YY[0], YY[1], YY[2], YY[3], YY[4], YY[5],
+           YY[6], YY[7]);
+    printf("\nZ %3u  %3u  %3u  %3u  %3u  %3u  %3u %3u\n", ZZ[0], ZZ[1], ZZ[2], ZZ[3], ZZ[4], ZZ[5],
+           ZZ[6], ZZ[7]);
 
     /* Now decrypted ZZ should be same as original XX */
     for (k = 0; k < 8; k++)
-	if (XX[k] != ZZ[k]) {
-	    printf("\n\07Error!  Noninvertable encryption.\n");
-	    exit(-1);		/* error exit */
-	}
+        if (XX[k] != ZZ[k]) {
+            printf("\n\07Error!  Noninvertable encryption.\n");
+            exit(-1); /* error exit */
+        }
     printf("\nNormal exit.\n");
-    return 0;			/* normal exit */
-}				/* main */
+    return 0; /* normal exit */
+} /* main */
 
-#endif				/* TEST */
-
+#endif /* TEST */
 
 /*************************************************************************/
 
 void ideaCfbReinit(struct IdeaCfbContext *context, byte const *iv)
 {
     if (iv)
-	memcpy(context->iv, iv, 8);
+        memcpy(context->iv, iv, 8);
     else
-	fill0(context->iv, 8);
+        fill0(context->iv, 8);
     context->bufleft = 0;
 }
 
@@ -484,9 +474,9 @@ void ideaCfbSync(struct IdeaCfbContext *context)
     int bufleft = context->bufleft;
 
     if (bufleft) {
-	memmove(context->iv + bufleft, context->iv, 8 - bufleft);
-	memcpy(context->iv, context->oldcipher + 8 - bufleft, bufleft);
-	context->bufleft = 0;
+        memmove(context->iv + bufleft, context->iv, 8 - bufleft);
+        memcpy(context->iv, context->oldcipher + 8 - bufleft, bufleft);
+        context->bufleft = 0;
     }
 }
 
@@ -495,8 +485,7 @@ void ideaCfbSync(struct IdeaCfbContext *context)
  * There are more compact ways of writing this, but this is
  * written for speed.
  */
-void ideaCfbEncrypt(struct IdeaCfbContext *context, byte const *src,
-		    byte * dest, int count)
+void ideaCfbEncrypt(struct IdeaCfbContext *context, byte const *src, byte *dest, int count)
 {
     int bufleft = context->bufleft;
     byte *bufptr = context->iv + 8 - bufleft;
@@ -505,32 +494,32 @@ void ideaCfbEncrypt(struct IdeaCfbContext *context, byte const *src,
      * in the buffer, XOR them in and return.
      */
     if (count <= bufleft) {
-	context->bufleft = bufleft - count;
-	while (count--) {
-	    *dest++ = *bufptr++ ^= *src++;
-	}
-	return;
+        context->bufleft = bufleft - count;
+        while (count--) {
+            *dest++ = *bufptr++ ^= *src++;
+        }
+        return;
     }
     count -= bufleft;
     /* Encrypt the first bufleft (0 to 7) bytes of the input by XOR
      * with the last bufleft bytes in the iv buffer.
      */
     while (bufleft--) {
-	*dest++ = (*bufptr++ ^= *src++);
+        *dest++ = (*bufptr++ ^= *src++);
     }
     /* Encrypt middle blocks of the input by cranking the cipher,
      * XORing 8-byte blocks, and repeating until the count
      * is 8 or less.
      */
     while (count > 8) {
-	bufptr = context->iv;
-	memcpy(context->oldcipher, bufptr, 8);
-	ideaCipher(bufptr, bufptr, context->key);
-	bufleft = 8;
-	count -= 8;
-	do {
-	    *dest++ = (*bufptr++ ^= *src++);
-	} while (--bufleft);
+        bufptr = context->iv;
+        memcpy(context->oldcipher, bufptr, 8);
+        ideaCipher(bufptr, bufptr, context->key);
+        bufleft = 8;
+        count -= 8;
+        do {
+            *dest++ = (*bufptr++ ^= *src++);
+        } while (--bufleft);
     }
     /* Do the last 1 to 8 bytes */
     bufptr = context->iv;
@@ -538,18 +527,16 @@ void ideaCfbEncrypt(struct IdeaCfbContext *context, byte const *src,
     ideaCipher(bufptr, bufptr, context->key);
     context->bufleft = 8 - count;
     do {
-	*dest++ = (*bufptr++ ^= *src++);
+        *dest++ = (*bufptr++ ^= *src++);
     } while (--count);
 }
-
 
 /*
  * Decrypt a buffer of data, using IDEA in CFB mode.
  * There are more compact ways of writing this, but this is
  * written for speed.
  */
-void ideaCfbDecrypt(struct IdeaCfbContext *context, byte const *src,
-		    byte * dest, int count)
+void ideaCfbDecrypt(struct IdeaCfbContext *context, byte const *src, byte *dest, int count)
 {
     int bufleft = context->bufleft;
     static byte *bufptr;
@@ -557,36 +544,36 @@ void ideaCfbDecrypt(struct IdeaCfbContext *context, byte const *src,
 
     bufptr = context->iv + (8 - bufleft);
     if (count <= bufleft) {
-	context->bufleft = bufleft - count;
-	while (count--) {
-	    t = *bufptr;
-	    *dest++ = t ^ (*bufptr++ = *src++);
-	}
-	return;
+        context->bufleft = bufleft - count;
+        while (count--) {
+            t = *bufptr;
+            *dest++ = t ^ (*bufptr++ = *src++);
+        }
+        return;
     }
     count -= bufleft;
     while (bufleft--) {
-	t = *bufptr;
-	*dest++ = t ^ (*bufptr++ = *src++);
+        t = *bufptr;
+        *dest++ = t ^ (*bufptr++ = *src++);
     }
     while (count > 8) {
-	bufptr = context->iv;
-	memcpy(context->oldcipher, bufptr, 8);
-	ideaCipher(bufptr, bufptr, context->key);
-	bufleft = 8;
-	count -= 8;
-	do {
-	    t = *bufptr;
-	    *dest++ = t ^ (*bufptr++ = *src++);
-	} while (--bufleft);
+        bufptr = context->iv;
+        memcpy(context->oldcipher, bufptr, 8);
+        ideaCipher(bufptr, bufptr, context->key);
+        bufleft = 8;
+        count -= 8;
+        do {
+            t = *bufptr;
+            *dest++ = t ^ (*bufptr++ = *src++);
+        } while (--bufleft);
     }
     bufptr = context->iv;
     memcpy(context->oldcipher, bufptr, 8);
     ideaCipher(bufptr, bufptr, context->key);
     context->bufleft = 8 - count;
     do {
-	t = *bufptr;
-	*dest++ = t ^ (*bufptr++ = *src++);
+        t = *bufptr;
+        *dest++ = t ^ (*bufptr++ = *src++);
     } while (--count);
 }
 
@@ -603,8 +590,7 @@ void ideaCfbDecrypt(struct IdeaCfbContext *context, byte const *src,
  * Initialize a cryptographic random-number generator.
  * key and seed should be arbitrary.
  */
-void ideaRandInit(struct IdeaRandContext *context, byte const key[16],
-		  byte const seed[8])
+void ideaRandInit(struct IdeaRandContext *context, byte const key[16], byte const seed[8])
 {
     int i;
 
@@ -612,7 +598,6 @@ void ideaRandInit(struct IdeaRandContext *context, byte const key[16],
     context->bufleft = 0;
     memcpy(context->internalbuf, seed, 8);
 }
-
 
 /*
  * Read out the RNG's state.
@@ -623,10 +608,9 @@ void ideaRandState(struct IdeaRandContext *context, byte key[16], byte seed[8])
 
     memcpy(seed, context->internalbuf, 8);
     for (i = 0; i < 8; i++) {
-	key[2 * i] = context->key[i] >> 8;
-	key[2 * i + 1] = context->key[i];
+        key[2 * i] = context->key[i] >> 8;
+        key[2 * i + 1] = context->key[i];
     }
-
 }
 
 /*
@@ -648,27 +632,26 @@ void ideaRandWash(struct IdeaRandContext *context, struct IdeaCfbContext *cfb)
  * Cryptographic pseudo-random-number generator, used for generating
  * session keys.
  */
-byte
-ideaRandByte(struct IdeaRandContext *c)
+byte ideaRandByte(struct IdeaRandContext *c)
 {
     int i;
 
     if (!c->bufleft) {
-	byte timestamp[8];
+        byte timestamp[8];
 
-	/* Get some true-random noise to help */
-	randPoolGetBytes(timestamp, sizeof(timestamp));
+        /* Get some true-random noise to help */
+        randPoolGetBytes(timestamp, sizeof(timestamp));
 
-	/* Compute next 8 bytes of output */
-	for (i = 0; i < 8; i++)
-	    c->outbuf[i] = c->internalbuf[i] ^ timestamp[i];
-	ideaCipher(c->outbuf, c->outbuf, c->key);
-	/* Compute new seed vector */
-	for (i = 0; i < 8; i++)
-	    c->internalbuf[i] = c->outbuf[i] ^ timestamp[i];
-	ideaCipher(c->internalbuf, c->internalbuf, c->key);
-	burn(timestamp);
-	c->bufleft = 8;
+        /* Compute next 8 bytes of output */
+        for (i = 0; i < 8; i++)
+            c->outbuf[i] = c->internalbuf[i] ^ timestamp[i];
+        ideaCipher(c->outbuf, c->outbuf, c->key);
+        /* Compute new seed vector */
+        for (i = 0; i < 8; i++)
+            c->internalbuf[i] = c->outbuf[i] ^ timestamp[i];
+        ideaCipher(c->internalbuf, c->internalbuf, c->key);
+        burn(timestamp);
+        c->bufleft = 8;
     }
     return c->outbuf[--c->bufleft];
 }

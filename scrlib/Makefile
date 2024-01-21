@@ -77,13 +77,13 @@ install: $(LIB)
 hellcurs.o: hellcurs.c curses.h
 Box.o: Box.cc Screen.h extern.h
 Dialog.o: Dialog.cc extern.h Screen.h Dialog.h
-Key.o: Key.cc Screen.h Termcap.h KeyPrivate.h extern.h
+Key.o: Key.cc Screen.h Captab.h KeyPrivate.h extern.h
 Menu.o: Menu.cc Screen.h Menu.h extern.h
 Popup.o: Popup.cc Screen.h Popup.h extern.h
-Screen.o: Screen.cc Screen.h Termcap.h TtyPrivate.h KeyPrivate.h extern.h
-Termcap.o: Termcap.cc Screen.h Termcap.h extern.h
-Termgoto.o: Termgoto.cc Screen.h Termcap.h extern.h
-Termlib.o: Termlib.cc Screen.h Termcap.h extern.h
+Screen.o: Screen.cc Screen.h Captab.h TtyPrivate.h KeyPrivate.h extern.h
+Termcap.o: Termcap.cc Screen.h Captab.h extern.h
+Termgoto.o: Termgoto.cc Screen.h Captab.h extern.h
+Termlib.o: Termlib.cc Screen.h Captab.h extern.h
 Tty.o: Tty.cc Screen.h TtyPrivate.h
 curses.o: curses.cc Screen.h curses.h
 hello.o: hello.cc Screen.h

@@ -16,9 +16,10 @@ class Box;
 
 class Flash {
 private:
-	Box *box;
-	Screen *scr;
+    Box *box;
+    Screen *scr;
+
 public:
-	Flash (Screen *s, const char *head, const char *msg, int color);
-	~Flash ();
+    Flash(Screen *s, const char *head, const char *msg, int color);
+    ~Flash();
 };

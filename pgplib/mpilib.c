@@ -55,56 +55,61 @@
    Added Smith modmult, generalized non-portable support.
  */
 
-/* #define COUNTMULTS *//* count modmults for performance studies */
+/* #define COUNTMULTS */ /* count modmults for performance studies */
 
 #ifdef DEBUG
 #if defined(MSDOS) || defined(WIN32)
-#ifdef __GO32__			/* DJGPP */
+#ifdef __GO32__ /* DJGPP */
 #include <pc.h>
 #else
 #include <conio.h>
-#endif				/* __GO32__ */
-#define poll_for_break() {while (kbhit()) getch();}
-#endif				/* MSDOS || WIN32 */
-#endif				/* DEBUG */
+#endif /* __GO32__ */
+#define poll_for_break() \
+    {                    \
+        while (kbhit())  \
+            getch();     \
+    }
+#endif /* MSDOS || WIN32 */
+#endif /* DEBUG */
 
 #ifndef poll_for_break
-#define poll_for_break()	/* stub */
+#define poll_for_break() /* stub */
 #endif
 
 #include "mpilib.h"
 
 #ifdef MACTC5
 #include <stdio.h>
+
 #include "Macutil3.h"
 void upton_burn(void);
 char *copyright_notice(void);
 void merritt_burn(void);
 #ifdef CODEWARRIOR
 #define mp_modexp xxxx_mp_modexp
-int mp_modexp(register unitptr expout, register unitptr expin,
-	      register unitptr exponent, register unitptr modulus);
+int mp_modexp(register unitptr expout, register unitptr expin, register unitptr exponent,
+              register unitptr modulus);
 #endif
 #endif
 
 #ifdef mp_smula
 #ifdef mp_smul
-Error:Both mp_smula and mp_smul cannot be defined.
+Error : Both mp_smula and mp_smul cannot be defined.
 #else
-#define mp_smul	mp_smula
+#define mp_smul mp_smula
 #endif
 #endif
 
 /* set macros for MULTUNIT */
 #ifdef MUNIT8
-#define MULTUNITSIZE   8
-typedef unsigned char MULTUNIT;
+#define MULTUNITSIZE 8
+        typedef unsigned char MULTUNIT;
 #ifdef UNIT8
 #define MULTUNIT_SIZE_SAME
 #endif
-#else				/* not MUNIT8 */
+#else /* not MUNIT8 */
 #ifdef MUNIT32
-#define MULTUNITSIZE   32
+#define MULTUNITSIZE 32
 typedef unsigned long MULTUNIT;
 #ifdef UNIT32
 #define MULTUNIT_SIZE_SAME
@@ -112,33 +117,33 @@ typedef unsigned long MULTUNIT;
 /* #error is not portable, this has the same effect */
 #include "UNITSIZE cannot be smaller than MULTUNITSIZE"
 #endif
-#else				/* assume MUNIT16 */
-#define MULTUNITSIZE   16
+#else /* assume MUNIT16 */
+#define MULTUNITSIZE 16
 typedef unsigned short MULTUNIT;
 #ifdef UNIT16
 #define MULTUNIT_SIZE_SAME
-#endif				/* UNIT16 */
+#endif /* UNIT16 */
 #ifdef UNIT8
 #include "UNITSIZE cannot be smaller than MULTUNITSIZE"
-#endif				/* UNIT8 */
-#endif				/* MUNIT32 */
-#endif				/* MUNIT8 */
+#endif /* UNIT8 */
+#endif /* MUNIT32 */
+#endif /* MUNIT8 */
 
-#define MULTUNIT_msb    ((MULTUNIT)1 << (MULTUNITSIZE-1))	/* msb of
-								   MULTUNIT */
-#define DMULTUNIT_msb   (1L << (2*MULTUNITSIZE-1))
-#define MULTUNIT_mask   ((MULTUNIT)((1L << MULTUNITSIZE)-1))
-#define MULTUNITs_perunit   (UNITSIZE/MULTUNITSIZE)
+#define MULTUNIT_msb                              \
+    ((MULTUNIT)1 << (MULTUNITSIZE - 1)) /* msb of \
+                                           MULTUNIT */
+#define DMULTUNIT_msb (1L << (2 * MULTUNITSIZE - 1))
+#define MULTUNIT_mask ((MULTUNIT)((1L << MULTUNITSIZE) - 1))
+#define MULTUNITs_perunit (UNITSIZE / MULTUNITSIZE)
 
-
-void mp_smul(MULTUNIT * prod, MULTUNIT * multiplicand, MULTUNIT multiplier);
+void mp_smul(MULTUNIT *prod, MULTUNIT *multiplicand, MULTUNIT multiplier);
 void mp_dmul(unitptr prod, unitptr multiplicand, unitptr multiplier);
 
 #if defined(WIN32)
 /* For Win32 we want this to be 32-bit, for compatibility with the assembler code */
-unsigned int global_precision = MAX_UNIT_PRECISION;     /* units of precision for all routines */
+unsigned int global_precision = MAX_UNIT_PRECISION; /* units of precision for all routines */
 #else
-short global_precision = MAX_UNIT_PRECISION;            /* units of precision for all routines */
+short global_precision = MAX_UNIT_PRECISION; /* units of precision for all routines */
 #endif
 /*      global_precision is the unit precision last set by set_precision.
    Initially, set_precision() should be called to define global_precision
@@ -155,61 +160,59 @@ short global_precision = MAX_UNIT_PRECISION;            /* units of precision fo
 typedef unsigned long int ulint;
 
 #ifndef mp_addc
-/* 
+/*
    multiprecision add with carry r2 to r1, result in r1
    carry is incoming carry flag-- value should be 0 or 1
 */
-boolean mp_addc
- (register unitptr r1, register unitptr r2, register boolean carry)
+boolean mp_addc(register unitptr r1, register unitptr r2, register boolean carry)
 {
     register unit x;
-    short precision;		/* number of units to add */
+    short precision; /* number of units to add */
     precision = global_precision;
     make_lsbptr(r1, precision);
     make_lsbptr(r2, precision);
     while (precision--) {
-	if (carry) {
-	    x = *r1 + *r2 + 1;
-	    carry = (*r2 >= (unit) (~*r1));
-	} else {
-	    x = *r1 + *r2;
-	    carry = (x < *r1);
-	}
-	post_higherunit(r2);
-	*post_higherunit(r1) = x;
+        if (carry) {
+            x = *r1 + *r2 + 1;
+            carry = (*r2 >= (unit)(~*r1));
+        } else {
+            x = *r1 + *r2;
+            carry = (x < *r1);
+        }
+        post_higherunit(r2);
+        *post_higherunit(r1) = x;
     }
-    return carry;		/* return the final carry flag bit */
-}				/* mp_addc */
-#endif				/* mp_addc */
+    return carry; /* return the final carry flag bit */
+} /* mp_addc */
+#endif /* mp_addc */
 
 #ifndef mp_subb
 
-/* 
+/*
    multiprecision subtract with borrow, r2 from r1, result in r1
    borrow is incoming borrow flag-- value should be 0 or 1
  */
-boolean mp_subb
- (register unitptr r1, register unitptr r2, register boolean borrow)
+boolean mp_subb(register unitptr r1, register unitptr r2, register boolean borrow)
 {
     register unit x;
-    short precision;		/* number of units to subtract */
+    short precision; /* number of units to subtract */
     precision = global_precision;
     make_lsbptr(r1, precision);
     make_lsbptr(r2, precision);
     while (precision--) {
-	if (borrow) {
-	    x = *r1 - *r2 - 1;
-	    borrow = (*r1 <= *r2);
-	} else {
-	    x = *r1 - *r2;
-	    borrow = (*r1 < *r2);
-	}
-	post_higherunit(r2);
-	*post_higherunit(r1) = x;
+        if (borrow) {
+            x = *r1 - *r2 - 1;
+            borrow = (*r1 <= *r2);
+        } else {
+            x = *r1 - *r2;
+            borrow = (*r1 < *r2);
+        }
+        post_higherunit(r2);
+        *post_higherunit(r1) = x;
     }
-    return borrow;		/* return the final carry/borrow flag bit */
-}				/* mp_subb */
-#endif				/* mp_subb */
+    return borrow; /* return the final carry/borrow flag bit */
+} /* mp_subb */
+#endif /* mp_subb */
 
 #ifndef mp_rotate_left
 
@@ -219,20 +222,20 @@ boolean mp_subb
 */
 boolean mp_rotate_left(register unitptr r1, register boolean carry)
 {
-    register int precision;	/* number of units to rotate */
-    unsigned int mcarry = carry, nextcarry;	/* int is supposed to be
-						 * the efficient size for ops*/
+    register int precision;                 /* number of units to rotate */
+    unsigned int mcarry = carry, nextcarry; /* int is supposed to be
+                                             * the efficient size for ops*/
     precision = global_precision;
     make_lsbptr(r1, precision);
     while (precision--) {
-	nextcarry = (((signedunit) * r1) < 0);
-	*r1 = (*r1 << 1) | mcarry;
-	mcarry = nextcarry;
-	pre_higherunit(r1);
+        nextcarry = (((signedunit)*r1) < 0);
+        *r1 = (*r1 << 1) | mcarry;
+        mcarry = nextcarry;
+        pre_higherunit(r1);
     }
-    return nextcarry;		/* return the final carry flag bit */
-}				/* mp_rotate_left */
-#endif				/* mp_rotate_left */
+    return nextcarry; /* return the final carry flag bit */
+} /* mp_rotate_left */
+#endif /* mp_rotate_left */
 
 /************** end of primitives that should be in assembly *************/
 
@@ -247,33 +250,33 @@ boolean mp_rotate_left(register unitptr r1, register boolean carry)
 */
 void mp_shift_right_bits(register unitptr r1, register short bits)
 {
-    register short precision;	/* number of units to shift */
+    register short precision; /* number of units to shift */
     register unit carry, nextcarry, bitmask;
     register short unbits;
     if (bits == 0)
-	return;			/* shift zero bits is a no-op */
+        return; /* shift zero bits is a no-op */
     carry = 0;
     bitmask = power_of_2(bits) - 1;
-    unbits = UNITSIZE - bits;	/* shift bits must be <= UNITSIZE */
+    unbits = UNITSIZE - bits; /* shift bits must be <= UNITSIZE */
     precision = global_precision;
     make_msbptr(r1, precision);
     if (bits == UNITSIZE) {
-	while (precision--) {
-	    nextcarry = *r1;
-	    *r1 = carry;
-	    carry = nextcarry;
-	    pre_lowerunit(r1);
-	}
+        while (precision--) {
+            nextcarry = *r1;
+            *r1 = carry;
+            carry = nextcarry;
+            pre_lowerunit(r1);
+        }
     } else {
-	while (precision--) {
-	    nextcarry = *r1 & bitmask;
-	    *r1 >>= bits;
-	    *r1 |= carry << unbits;
-	    carry = nextcarry;
-	    pre_lowerunit(r1);
-	}
+        while (precision--) {
+            nextcarry = *r1 & bitmask;
+            *r1 >>= bits;
+            *r1 |= carry << unbits;
+            carry = nextcarry;
+            pre_lowerunit(r1);
+        }
     }
-}				/* mp_shift_right_bits */
+} /* mp_shift_right_bits */
 
 #ifndef mp_compare
 
@@ -285,20 +288,20 @@ void mp_shift_right_bits(register unitptr r1, register short bits)
  */
 short mp_compare(register unitptr r1, register unitptr r2)
 {
-    register short precision;	/* number of units to compare */
+    register short precision; /* number of units to compare */
 
     precision = global_precision;
     make_msbptr(r1, precision);
     make_msbptr(r2, precision);
     do {
-	if (*r1 < *r2)
-	    return -1;
-	if (*post_lowerunit(r1) > *post_lowerunit(r2))
-	    return 1;
+        if (*r1 < *r2)
+            return -1;
+        if (*post_lowerunit(r1) > *post_lowerunit(r2))
+            return 1;
     } while (--precision);
-    return 0;			/*  *r1 == *r2  */
-}				/* mp_compare */
-#endif				/* mp_compare */
+    return 0; /*  *r1 == *r2  */
+} /* mp_compare */
+#endif /* mp_compare */
 
 /* Increment multiprecision integer r. */
 boolean mp_inc(register unitptr r)
@@ -307,12 +310,12 @@ boolean mp_inc(register unitptr r)
     precision = global_precision;
     make_lsbptr(r, precision);
     do {
-	if (++(*r))
-	    return 0;		/* no carry */
-	post_higherunit(r);
+        if (++(*r))
+            return 0; /* no carry */
+        post_higherunit(r);
     } while (--precision);
-    return 1;			/* return carry set */
-}				/* mp_inc */
+    return 1; /* return carry set */
+} /* mp_inc */
 
 /* Decrement multiprecision integer r. */
 boolean mp_dec(register unitptr r)
@@ -321,40 +324,40 @@ boolean mp_dec(register unitptr r)
     precision = global_precision;
     make_lsbptr(r, precision);
     do {
-	if ((signedunit) (--(*r)) != (signedunit) - 1)
-	    return 0;		/* no borrow */
-	post_higherunit(r);
+        if ((signedunit)(--(*r)) != (signedunit)-1)
+            return 0; /* no borrow */
+        post_higherunit(r);
     } while (--precision);
-    return 1;			/* return borrow set */
-}				/* mp_dec */
+    return 1; /* return borrow set */
+} /* mp_dec */
 
 /* Compute 2's complement, the arithmetic negative, of r */
 void mp_neg(register unitptr r)
 {
-    register short precision;	/* number of units to negate */
+    register short precision; /* number of units to negate */
     precision = global_precision;
-    mp_dec(r);			/* 2's complement is 1's complement plus 1 */
-    do {			/* now do 1's complement */
-	*r = ~(*r);
-	r++;
+    mp_dec(r); /* 2's complement is 1's complement plus 1 */
+    do {       /* now do 1's complement */
+        *r = ~(*r);
+        r++;
     } while (--precision);
-}				/* mp_neg */
+} /* mp_neg */
 
 #ifndef mp_move
 
 void mp_move(register unitptr dst, register unitptr src)
 {
-    register short precision;	/* number of units to move */
+    register short precision; /* number of units to move */
     precision = global_precision;
     do {
-	*dst++ = *src++;
+        *dst++ = *src++;
     } while (--precision);
-}				/* mp_move */
-#endif				/* mp_move */
+} /* mp_move */
+#endif /* mp_move */
 
 /* Init multiprecision register r with short value. */
 void mp_init(register unitptr r, word16 value)
-{	/* Note that mp_init doesn't extend sign bit for >32767 */
+{ /* Note that mp_init doesn't extend sign bit for >32767 */
 
     unitfill0(r, global_precision);
     make_lsbptr(r, global_precision);
@@ -362,7 +365,7 @@ void mp_init(register unitptr r, word16 value)
 #ifdef UNIT8
     *post_higherunit(r) = value >> UNITSIZE;
 #endif
-}				/* mp_init */
+} /* mp_init */
 
 /* Returns number of significant units in r */
 short significance(register unitptr r)
@@ -371,12 +374,11 @@ short significance(register unitptr r)
     precision = global_precision;
     make_msbptr(r, precision);
     do {
-	if (*post_lowerunit(r))
-	    return precision;
+        if (*post_lowerunit(r))
+            return precision;
     } while (--precision);
     return precision;
-}				/* significance */
-
+} /* significance */
 
 #ifndef unitfill0
 
@@ -384,20 +386,20 @@ short significance(register unitptr r)
 void unitfill0(unitptr r, word16 unitcount)
 {
     while (unitcount--)
-	*r++ = 0;
-}				/* unitfill0 */
-#endif				/* unitfill0 */
+        *r++ = 0;
+} /* unitfill0 */
+#endif /* unitfill0 */
 
 /* Unsigned divide, treats both operands as positive. */
-int mp_udiv(register unitptr remainder, register unitptr quotient,
-	    register unitptr dividend, register unitptr divisor)
+int mp_udiv(register unitptr remainder, register unitptr quotient, register unitptr dividend,
+            register unitptr divisor)
 {
     int bits;
     short dprec;
     register unit bitmask;
 
     if (testeq(divisor, 0))
-	return -1;		/* zero divisor means divide error */
+        return -1; /* zero divisor means divide error */
     mp_init0(remainder);
     mp_init0(quotient);
     /* normalize and compute number of bits in dividend first */
@@ -407,20 +409,19 @@ int mp_udiv(register unitptr remainder, register unitptr quotient,
     make_msbptr(quotient, dprec);
 
     while (bits--) {
-	mp_rotate_left(remainder,
-		       (boolean) (sniff_bit(dividend, bitmask) != 0));
-	if (mp_compare(remainder, divisor) >= 0) {
-	    mp_sub(remainder, divisor);
-	    stuff_bit(quotient, bitmask);
-	}
-	bump_2bitsniffers(dividend, quotient, bitmask);
+        mp_rotate_left(remainder, (boolean)(sniff_bit(dividend, bitmask) != 0));
+        if (mp_compare(remainder, divisor) >= 0) {
+            mp_sub(remainder, divisor);
+            stuff_bit(quotient, bitmask);
+        }
+        bump_2bitsniffers(dividend, quotient, bitmask);
     }
     return 0;
-}				/* mp_udiv */
+} /* mp_udiv */
 
 #ifdef UPTON_OR_SMITH
 
-#define RECIPMARGIN 0		/* extra margin bits used by mp_recip() */
+#define RECIPMARGIN 0 /* extra margin bits used by mp_recip() */
 
 /* Compute reciprocal (quotient) as 1/divisor.  Used by faster modmult. */
 int mp_recip(register unitptr quotient, register unitptr divisor)
@@ -430,13 +431,13 @@ int mp_recip(register unitptr quotient, register unitptr divisor)
     register unit bitmask;
     unit remainder[MAX_UNIT_PRECISION];
     if (testeq(divisor, 0))
-	return -1;		/* zero divisor means divide error */
+        return -1; /* zero divisor means divide error */
     mp_init0(remainder);
     mp_init0(quotient);
 
     /* normalize and compute number of bits in quotient first */
     bits = countbits(divisor) + RECIPMARGIN;
-    bitmask = bitmsk(bits);	/* bitmask within a single unit */
+    bitmask = bitmsk(bits); /* bitmask within a single unit */
     qprec = bits2units(bits + 1);
     mp_setbit(remainder, (bits - RECIPMARGIN) - 1);
     /* rescale quotient to precision of divisor + RECIPMARGIN bits */
@@ -444,43 +445,43 @@ int mp_recip(register unitptr quotient, register unitptr divisor)
     make_msbptr(quotient, qprec);
 
     while (bits--) {
-	mp_shift_left(remainder);
-	if (mp_compare(remainder, divisor) >= 0) {
-	    mp_sub(remainder, divisor);
-	    stuff_bit(quotient, bitmask);
-	}
-	bump_bitsniffer(quotient, bitmask);
+        mp_shift_left(remainder);
+        if (mp_compare(remainder, divisor) >= 0) {
+            mp_sub(remainder, divisor);
+            stuff_bit(quotient, bitmask);
+        }
+        bump_bitsniffer(quotient, bitmask);
     }
-    mp_init0(remainder);	/* burn sensitive data left on stack */
+    mp_init0(remainder); /* burn sensitive data left on stack */
     return 0;
-}				/* mp_recip */
-#endif				/* UPTON_OR_SMITH */
+} /* mp_recip */
+#endif /* UPTON_OR_SMITH */
 
 /* Signed divide, either or both operands may be negative. */
-int mp_div(register unitptr remainder, register unitptr quotient,
-	   register unitptr dividend, register unitptr divisor)
+int mp_div(register unitptr remainder, register unitptr quotient, register unitptr dividend,
+           register unitptr divisor)
 {
     boolean dvdsign, dsign;
     int status;
-    dvdsign = (boolean) (mp_tstminus(dividend) != 0);
-    dsign = (boolean) (mp_tstminus(divisor) != 0);
+    dvdsign = (boolean)(mp_tstminus(dividend) != 0);
+    dsign = (boolean)(mp_tstminus(divisor) != 0);
     if (dvdsign)
-	mp_neg(dividend);
+        mp_neg(dividend);
     if (dsign)
-	mp_neg(divisor);
+        mp_neg(divisor);
     status = mp_udiv(remainder, quotient, dividend, divisor);
     if (dvdsign)
-	mp_neg(dividend);	/* repair caller's dividend */
+        mp_neg(dividend); /* repair caller's dividend */
     if (dsign)
-	mp_neg(divisor);	/* repair caller's divisor */
+        mp_neg(divisor); /* repair caller's divisor */
     if (status < 0)
-	return status;		/* divide error? */
+        return status; /* divide error? */
     if (dvdsign)
-	mp_neg(remainder);
+        mp_neg(remainder);
     if (dvdsign ^ dsign)
-	mp_neg(quotient);
+        mp_neg(quotient);
     return status;
-}				/* mp_div */
+} /* mp_div */
 
 /*
  * This function does a fast divide and mod on a multiprecision dividend
@@ -488,15 +489,14 @@ int mp_div(register unitptr remainder, register unitptr quotient,
  * This is an unsigned divide.  It treats both operands as positive.
  * It is used mainly for faster printing of large numbers in base 10.
  */
-word16 mp_shortdiv(register unitptr quotient,
-		   register unitptr dividend, register word16 divisor)
+word16 mp_shortdiv(register unitptr quotient, register unitptr dividend, register word16 divisor)
 {
     int bits;
     short dprec;
     register unit bitmask;
     register word16 remainder;
-    if (!divisor)		/* if divisor == 0 */
-	return -1;		/* zero divisor means divide error */
+    if (!divisor)  /* if divisor == 0 */
+        return -1; /* zero divisor means divide error */
     remainder = 0;
     mp_init0(quotient);
     /* normalize and compute number of bits in dividend first */
@@ -506,39 +506,37 @@ word16 mp_shortdiv(register unitptr quotient,
     make_msbptr(quotient, dprec);
 
     while (bits--) {
-	remainder <<= 1;
-	if (sniff_bit(dividend, bitmask))
-	    remainder++;
-	if (remainder >= divisor) {
-	    remainder -= divisor;
-	    stuff_bit(quotient, bitmask);
-	}
-	bump_2bitsniffers(dividend, quotient, bitmask);
+        remainder <<= 1;
+        if (sniff_bit(dividend, bitmask))
+            remainder++;
+        if (remainder >= divisor) {
+            remainder -= divisor;
+            stuff_bit(quotient, bitmask);
+        }
+        bump_2bitsniffers(dividend, quotient, bitmask);
     }
     return remainder;
-}				/* mp_shortdiv */
+} /* mp_shortdiv */
 
 /* Unsigned divide, treats both operands as positive. */
-int mp_mod(register unitptr remainder,
-	   register unitptr dividend, register unitptr divisor)
+int mp_mod(register unitptr remainder, register unitptr dividend, register unitptr divisor)
 {
     int bits;
     short dprec;
     register unit bitmask;
     if (testeq(divisor, 0))
-	return -1;		/* zero divisor means divide error */
+        return -1; /* zero divisor means divide error */
     mp_init0(remainder);
     /* normalize and compute number of bits in dividend first */
     init_bitsniffer(dividend, bitmask, dprec, bits);
 
     while (bits--) {
-	mp_rotate_left(remainder,
-		       (boolean) (sniff_bit(dividend, bitmask) != 0));
-	msub(remainder, divisor);
-	bump_bitsniffer(dividend, bitmask);
+        mp_rotate_left(remainder, (boolean)(sniff_bit(dividend, bitmask) != 0));
+        msub(remainder, divisor);
+        bump_bitsniffer(dividend, bitmask);
     }
     return 0;
-}				/* mp_mod */
+} /* mp_mod */
 
 /*
  * This function does a fast mod operation on a multiprecision dividend
@@ -552,26 +550,24 @@ word16 mp_shortmod(register unitptr dividend, register word16 divisor)
     short dprec;
     register unit bitmask;
     register word16 remainder;
-    if (!divisor)		/* if divisor == 0 */
-	return -1;		/* zero divisor means divide error */
+    if (!divisor)  /* if divisor == 0 */
+        return -1; /* zero divisor means divide error */
     remainder = 0;
     /* normalize and compute number of bits in dividend first */
     init_bitsniffer(dividend, bitmask, dprec, bits);
 
     while (bits--) {
-	remainder <<= 1;
-	if (sniff_bit(dividend, bitmask))
-	    remainder++;
-	if (remainder >= divisor)
-	    remainder -= divisor;
-	bump_bitsniffer(dividend, bitmask);
+        remainder <<= 1;
+        if (sniff_bit(dividend, bitmask))
+            remainder++;
+        if (remainder >= divisor)
+            remainder -= divisor;
+        bump_bitsniffer(dividend, bitmask);
     }
     return remainder;
-}				/* mp_shortmod */
+} /* mp_shortmod */
 
-
-
-#ifdef COMB_MULT		/* use faster "comb" multiply algorithm */
+#ifdef COMB_MULT /* use faster "comb" multiply algorithm */
 /* We are skipping this code because it has a bug... */
 
 /*
@@ -597,8 +593,7 @@ word16 mp_shortmod(register unitptr dividend, register word16 divisor)
  *
  * BUG NOTE: Possibly fixed.  Needs testing.
  */
-int mp_mult(register unitptr prod,
-	    register unitptr multiplicand, register unitptr multiplier)
+int mp_mult(register unitptr prod, register unitptr multiplicand, register unitptr multiplier)
 {
     int bits;
     register unit bitmask;
@@ -610,50 +605,49 @@ int mp_mult(register unitptr prod,
     mp_init(prod + tohigher(global_precision), 0);
 
     if (testeq(multiplicand, 0))
-	return 0;		/* zero multiplicand means zero product */
+        return 0; /* zero multiplicand means zero product */
 
-    mp_move(mplicand, multiplicand);	/* save it from damage */
+    mp_move(mplicand, multiplicand); /* save it from damage */
 
     normalize(multiplier, mprec);
     if (!mprec)
-	return 0;
+        return 0;
 
     make_lsbptr(multiplier, mprec);
-    bitmask = 1;		/* start scan at LSB of multiplier */
+    bitmask = 1; /* start scan at LSB of multiplier */
 
-    do {			/* UNITSIZE times */
-	/* do for bits 0-15 */
-	product = prod;
-	mplier = multiplier;
-	mprec2 = mprec;
-	while (mprec2--) {	/* do for each word in multiplier */
+    do { /* UNITSIZE times */
+        /* do for bits 0-15 */
+        product = prod;
+        mplier = multiplier;
+        mprec2 = mprec;
+        while (mprec2--) { /* do for each word in multiplier */
 
-	    if (sniff_bit(mplier, bitmask)) {
-		if (mp_addc(product, multiplicand, 0)) {  /* ripple carry */
-		  /* After 1st time thru, this is rarely encountered. */
-		    temp = msbptr(product, global_precision);
-		    pre_higherunit(temp);
-		    /* temp now points to LSU of carry region. */
-		    unmake_lsbptr(temp, global_precision);
-		    mp_inc(temp);
-		}		/* ripple carry */
-	    }
-	    pre_higherunit(mplier);
-	    pre_higherunit(product);
-	}
-	if (!(bitmask <<= 1))
-	    break;
-	mp_shift_left(multiplicand);
+            if (sniff_bit(mplier, bitmask)) {
+                if (mp_addc(product, multiplicand, 0)) { /* ripple carry */
+                    /* After 1st time thru, this is rarely encountered. */
+                    temp = msbptr(product, global_precision);
+                    pre_higherunit(temp);
+                    /* temp now points to LSU of carry region. */
+                    unmake_lsbptr(temp, global_precision);
+                    mp_inc(temp);
+                } /* ripple carry */
+            }
+            pre_higherunit(mplier);
+            pre_higherunit(product);
+        }
+        if (!(bitmask <<= 1))
+            break;
+        mp_shift_left(multiplicand);
 
     } while (TRUE);
 
-    mp_move(multiplicand, mplicand);	/* recover */
+    mp_move(multiplicand, mplicand); /* recover */
 
-    return 0;			/* normal return */
-}				/* mp_mult */
+    return 0; /* normal return */
+} /* mp_mult */
 
-#endif				/* COMB_MULT */
-
+#endif /* COMB_MULT */
 
 /* Because the "comb" multiply has a bug, we will use the slower
    Russian peasant multiply instead.  Fortunately, the mp_mult
@@ -664,26 +658,25 @@ int mp_mult(register unitptr prod,
  * Computes multiprecision prod = multiplicand * multiplier
  * Uses "Russian peasant" multiply algorithm.
  */
-int mp_mult(register unitptr prod,
-	    register unitptr multiplicand, register unitptr multiplier)
+int mp_mult(register unitptr prod, register unitptr multiplicand, register unitptr multiplier)
 {
     int bits;
     register unit bitmask;
     short mprec;
     mp_init(prod, 0);
     if (testeq(multiplicand, 0))
-	return 0;		/* zero multiplicand means zero product */
+        return 0; /* zero multiplicand means zero product */
     /* normalize and compute number of bits in multiplier first */
     init_bitsniffer(multiplier, bitmask, mprec, bits);
 
     while (bits--) {
-	mp_shift_left(prod);
-	if (sniff_bit(multiplier, bitmask))
-	    mp_add(prod, multiplicand);
-	bump_bitsniffer(multiplier, bitmask);
+        mp_shift_left(prod);
+        if (sniff_bit(multiplier, bitmask))
+            mp_add(prod, multiplicand);
+        bump_bitsniffer(multiplier, bitmask);
     }
     return 0;
-}				/* mp_mult */
+} /* mp_mult */
 
 /*
  * mp_modmult computes a multiprecision multiply combined with a
@@ -691,7 +684,7 @@ int mp_mult(register unitptr prod,
  * this multiprecision arithmetic library for performing modulo
  * exponentiation.  We experimented with different versions of modmult,
  * depending on the machine architecture and performance requirements.
- * We will either use a Russian Peasant modmult (peasant_modmult), 
+ * We will either use a Russian Peasant modmult (peasant_modmult),
  * Charlie Merritt's modmult (merritt_modmult), Jimmy Upton's
  * modmult (upton_modmult), or Thad Smith's modmult (smith_modmult).
  * On machines with a hardware atomic multiply instruction,
@@ -702,7 +695,7 @@ int mp_mult(register unitptr prod,
  * We use the alias names mp_modmult, stage_modulus, and modmult_burn
  * for the corresponding true names, which depend on what flavor of
  * modmult we are using.
- * 
+ *
  * Before making the first call to mp_modmult, you must set up the
  * modulus-dependant precomputated tables by calling stage_modulus.
  * After making all the calls to mp_modmult, you call modmult_burn to
@@ -713,13 +706,12 @@ int mp_mult(register unitptr prod,
 /* "number of modmults" counters, used for performance studies. */
 static unsigned int tally_modmults = 0;
 static unsigned int tally_modsquares = 0;
-#endif				/* COUNTMULTS */
-
+#endif /* COUNTMULTS */
 
 #ifdef PEASANT
 /* Conventional Russian peasant multiply with modulo algorithm. */
 
-static unitptr pmodulus = 0;	/* used only by mp_modmult */
+static unitptr pmodulus = 0; /* used only by mp_modmult */
 
 /*
  * Must pass modulus to stage_modulus before calling modmult.
@@ -727,10 +719,10 @@ static unitptr pmodulus = 0;	/* used only by mp_modmult */
  * size of the modulus, plus SLOP_BITS.
  */
 int stage_peasant_modulus(unitptr n)
-{	/* For this simple version of modmult, just copy unit pointer. */
+{ /* For this simple version of modmult, just copy unit pointer. */
     pmodulus = n;
-    return 0;			/* normal return */
-}				/* stage_peasant_modulus */
+    return 0; /* normal return */
+} /* stage_peasant_modulus */
 
 /* "Russian peasant" multiply algorithm, combined with a modulo
  * operation.  This is a simple naive replacement for Merritt's
@@ -738,29 +730,28 @@ int stage_peasant_modulus(unitptr n)
  * Computes:  prod = (multiplicand*multiplier) mod modulus
  * WARNING: All the arguments must be less than the modulus!
  */
-int peasant_modmult(register unitptr prod,
-		    unitptr multiplicand, register unitptr multiplier)
+int peasant_modmult(register unitptr prod, unitptr multiplicand, register unitptr multiplier)
 {
     int bits;
     register unit bitmask;
     short mprec;
     mp_init(prod, 0);
-/*      if (testeq(multiplicand,0))
-       return 0; *//* zero multiplicand means zero product */
+    /*      if (testeq(multiplicand,0))
+           return 0; *//* zero multiplicand means zero product */
     /* normalize and compute number of bits in multiplier first */
     init_bitsniffer(multiplier, bitmask, mprec, bits);
 
     while (bits--) {
-	mp_shift_left(prod);
-	msub(prod, pmodulus);	/* turns mult into modmult */
-	if (sniff_bit(multiplier, bitmask)) {
-	    mp_add(prod, multiplicand);
-	    msub(prod, pmodulus);	/* turns mult into modmult */
-	}
-	bump_bitsniffer(multiplier, bitmask);
+        mp_shift_left(prod);
+        msub(prod, pmodulus); /* turns mult into modmult */
+        if (sniff_bit(multiplier, bitmask)) {
+            mp_add(prod, multiplicand);
+            msub(prod, pmodulus); /* turns mult into modmult */
+        }
+        bump_bitsniffer(multiplier, bitmask);
     }
     return 0;
-}				/* peasant_modmult */
+} /* peasant_modmult */
 
 /*
  * If we are using a version of mp_modmult that uses internal tables
@@ -776,10 +767,9 @@ int peasant_modmult(register unitptr prod,
  */
 void peasant_burn(void)
 {
-}				/* peasant_burn */
+} /* peasant_burn */
 
-#endif				/* PEASANT */
-
+#endif /* PEASANT */
 
 #ifdef MERRITT
 /*=========================================================================*/
@@ -805,37 +795,60 @@ static void mp_lshift_unit(register unitptr r1)
     make_msbptr(r1, precision);
     r2 = r1;
     while (--precision)
-	*post_lowerunit(r1) = *pre_lowerunit(r2);
+        *post_lowerunit(r1) = *pre_lowerunit(r2);
     *r1 = 0;
-}				/* mp_lshift_unit */
+} /* mp_lshift_unit */
 
 /* moduli_buf contains shifted images of the modulus, set by stage_modulus */
-static unit moduli_buf[UNITSIZE - 1][MAX_UNIT_PRECISION] =
-{0};
-static unitptr moduli[UNITSIZE] =	/* contains pointers into moduli_buf */
-{0, moduli_buf[0], moduli_buf[1], moduli_buf[2],
- moduli_buf[3], moduli_buf[4], moduli_buf[5], moduli_buf[6]
+static unit moduli_buf[UNITSIZE - 1][MAX_UNIT_PRECISION] = { 0 };
+static unitptr moduli[UNITSIZE] = /* contains pointers into moduli_buf */
+    { 0,
+      moduli_buf[0],
+      moduli_buf[1],
+      moduli_buf[2],
+      moduli_buf[3],
+      moduli_buf[4],
+      moduli_buf[5],
+      moduli_buf[6]
 #ifndef UNIT8
- ,moduli_buf[7], moduli_buf[8], moduli_buf[9], moduli_buf[10],
- moduli_buf[11], moduli_buf[12], moduli_buf[13], moduli_buf[14]
-#ifndef UNIT16			/* and not UNIT8 */
- ,moduli_buf[15], moduli_buf[16], moduli_buf[17], moduli_buf[18],
- moduli_buf[19], moduli_buf[20], moduli_buf[21], moduli_buf[22],
- moduli_buf[23], moduli_buf[24], moduli_buf[25], moduli_buf[26],
- moduli_buf[27], moduli_buf[28], moduli_buf[29], moduli_buf[30]
-#endif				/* UNIT16 and UNIT8 not defined */
-#endif				/* UNIT8 not defined */
-};
+      ,
+      moduli_buf[7],
+      moduli_buf[8],
+      moduli_buf[9],
+      moduli_buf[10],
+      moduli_buf[11],
+      moduli_buf[12],
+      moduli_buf[13],
+      moduli_buf[14]
+#ifndef UNIT16 /* and not UNIT8 */
+      ,
+      moduli_buf[15],
+      moduli_buf[16],
+      moduli_buf[17],
+      moduli_buf[18],
+      moduli_buf[19],
+      moduli_buf[20],
+      moduli_buf[21],
+      moduli_buf[22],
+      moduli_buf[23],
+      moduli_buf[24],
+      moduli_buf[25],
+      moduli_buf[26],
+      moduli_buf[27],
+      moduli_buf[28],
+      moduli_buf[29],
+      moduli_buf[30]
+#endif /* UNIT16 and UNIT8 not defined */
+#endif /* UNIT8 not defined */
+    };
 
 /*
  * To optimize msubs, need following 2 unit arrays, each filled
  * with the most significant unit and next-to-most significant unit
  * of the preshifted images of the modulus.
  */
-static unit msu_moduli[UNITSIZE] =
-{0};				/* most signif. unit */
-static unit nmsu_moduli[UNITSIZE] =
-{0};				/* next-most signif. unit */
+static unit msu_moduli[UNITSIZE] = { 0 };  /* most signif. unit */
+static unit nmsu_moduli[UNITSIZE] = { 0 }; /* next-most signif. unit */
 
 /*
  * mpdbuf contains preshifted images of the multiplicand, mod n.
@@ -845,8 +858,7 @@ static unit nmsu_moduli[UNITSIZE] =
  * end of mp_modexp.  This is so that no sensitive data is left in
  * memory after the program exits.
  */
-static unit mpdbuf[UNITSIZE - 1][MAX_UNIT_PRECISION] =
-{0};
+static unit mpdbuf[UNITSIZE - 1][MAX_UNIT_PRECISION] = { 0 };
 
 /*
  * Computes UNITSIZE images of r, each shifted left 1 more bit.
@@ -856,13 +868,13 @@ static void stage_mp_images(unitptr images[UNITSIZE], unitptr r)
 {
     short int i;
 
-    images[0] = r;	/* no need to move the first image, just copy ptr */
+    images[0] = r; /* no need to move the first image, just copy ptr */
     for (i = 1; i < UNITSIZE; i++) {
-	mp_move(images[i], images[i - 1]);
-	mp_shift_left(images[i]);
-	msub(images[i], moduli[0]);
+        mp_move(images[i], images[i - 1]);
+        mp_shift_left(images[i]);
+        msub(images[i], moduli[0]);
     }
-}				/* stage_mp_images */
+} /* stage_mp_images */
 
 /*
  * Computes UNITSIZE images of modulus, each shifted left 1 more bit.
@@ -874,29 +886,31 @@ static void stage_mp_images(unitptr images[UNITSIZE], unitptr r)
 int stage_merritt_modulus(unitptr n)
 {
     short int i;
-    unitptr msu;	/* ptr to most significant unit, for faster msubs */
+    unitptr msu; /* ptr to most significant unit, for faster msubs */
 
-    moduli[0] = n;	/* no need to move the first image, just copy ptr */
+    moduli[0] = n; /* no need to move the first image, just copy ptr */
 
     /* used by optimized msubs macro... */
-    msu = msbptr(n, global_precision);	/* needed by msubs */
+    msu = msbptr(n, global_precision); /* needed by msubs */
     msu_moduli[0] = *post_lowerunit(msu);
     nmsu_moduli[0] = *msu;
 
     for (i = 1; i < UNITSIZE; i++) {
-	mp_move(moduli[i], moduli[i - 1]);
-	mp_shift_left(moduli[i]);
+        mp_move(moduli[i], moduli[i - 1]);
+        mp_shift_left(moduli[i]);
 
-	/* used by optimized msubs macro... */
-	msu = msbptr(moduli[i], global_precision);	/* needed by msubs */
-	msu_moduli[i] = *post_lowerunit(msu);	/* for faster msubs */
-	nmsu_moduli[i] = *msu;
+        /* used by optimized msubs macro... */
+        msu = msbptr(moduli[i], global_precision); /* needed by msubs */
+        msu_moduli[i] = *post_lowerunit(msu);      /* for faster msubs */
+        nmsu_moduli[i] = *msu;
     }
-    return 0;			/* normal return */
-}				/* stage_merritt_modulus */
+    return 0; /* normal return */
+} /* stage_merritt_modulus */
 
 /* The following macros, sniffadd and msubs, are used by modmult... */
-#define sniffadd(i) if (*multiplier & power_of_2(i))  mp_add(prod,mpd[i])
+#define sniffadd(i)                  \
+    if (*multiplier & power_of_2(i)) \
+    mp_add(prod, mpd[i])
 
 /* Unoptimized msubs macro (msubs0) follows... */
 /* #define msubs0(i) msub(prod,moduli[i])
@@ -919,10 +933,11 @@ int stage_merritt_modulus(unitptr n)
  */
 
 /* Fully-optimized msubs macro (msubs2) follows... */
-#define msubs(i) if (((p_m = *msu_prod-msu_moduli[i])>0) || ( \
- (p_m==0) && ( (*nmsu_prod>nmsu_moduli[i]) || ( \
- (*nmsu_prod==nmsu_moduli[i]) && ((mp_compare(prod,moduli[i]) >= 0)) ))) ) \
- mp_sub(prod,moduli[i])
+#define msubs(i)                                                                                   \
+    if (((p_m = *msu_prod - msu_moduli[i]) > 0) ||                                                 \
+        ((p_m == 0) && ((*nmsu_prod > nmsu_moduli[i]) || ((*nmsu_prod == nmsu_moduli[i]) &&        \
+                                                          ((mp_compare(prod, moduli[i]) >= 0)))))) \
+    mp_sub(prod, moduli[i])
 
 /*
  * Performs combined multiply/modulo operation.
@@ -931,39 +946,62 @@ int stage_merritt_modulus(unitptr n)
  * Assumes the modulus has been predefined by first calling
  * stage_modulus.
  */
-int merritt_modmult(register unitptr prod,
-		    unitptr multiplicand, register unitptr multiplier)
+int merritt_modmult(register unitptr prod, unitptr multiplicand, register unitptr multiplier)
 {
     /* p_m, msu_prod, and nmsu_prod are used by the optimized msubs macro... */
     register signedunit p_m;
-    register unitptr msu_prod;	/* ptr to most significant unit of product */
-    register unitptr nmsu_prod;	/* next-most signif. unit of product */
-    short mprec;		/* precision of multiplier, in units */
+    register unitptr msu_prod;  /* ptr to most significant unit of product */
+    register unitptr nmsu_prod; /* next-most signif. unit of product */
+    short mprec;                /* precision of multiplier, in units */
     /*      Array mpd contains a list of pointers to preshifted images of
        the multiplicand: */
-    static unitptr mpd[UNITSIZE] =
-    {
-	0, mpdbuf[0], mpdbuf[1], mpdbuf[2],
-	mpdbuf[3], mpdbuf[4], mpdbuf[5], mpdbuf[6]
+    static unitptr mpd[UNITSIZE] = { 0,
+                                     mpdbuf[0],
+                                     mpdbuf[1],
+                                     mpdbuf[2],
+                                     mpdbuf[3],
+                                     mpdbuf[4],
+                                     mpdbuf[5],
+                                     mpdbuf[6]
 #ifndef UNIT8
-	,mpdbuf[7], mpdbuf[8], mpdbuf[9], mpdbuf[10],
-	mpdbuf[11], mpdbuf[12], mpdbuf[13], mpdbuf[14]
-#ifndef UNIT16			/* and not UNIT8 */
-	,mpdbuf[15], mpdbuf[16], mpdbuf[17], mpdbuf[18],
-	mpdbuf[19], mpdbuf[20], mpdbuf[21], mpdbuf[22],
-	mpdbuf[23], mpdbuf[24], mpdbuf[25], mpdbuf[26],
-	mpdbuf[27], mpdbuf[28], mpdbuf[29], mpdbuf[30]
-#endif				/* UNIT16 and UNIT8 not defined */
-#endif				/* UNIT8 not defined */
+                                     ,
+                                     mpdbuf[7],
+                                     mpdbuf[8],
+                                     mpdbuf[9],
+                                     mpdbuf[10],
+                                     mpdbuf[11],
+                                     mpdbuf[12],
+                                     mpdbuf[13],
+                                     mpdbuf[14]
+#ifndef UNIT16 /* and not UNIT8 */
+                                     ,
+                                     mpdbuf[15],
+                                     mpdbuf[16],
+                                     mpdbuf[17],
+                                     mpdbuf[18],
+                                     mpdbuf[19],
+                                     mpdbuf[20],
+                                     mpdbuf[21],
+                                     mpdbuf[22],
+                                     mpdbuf[23],
+                                     mpdbuf[24],
+                                     mpdbuf[25],
+                                     mpdbuf[26],
+                                     mpdbuf[27],
+                                     mpdbuf[28],
+                                     mpdbuf[29],
+                                     mpdbuf[30]
+#endif /* UNIT16 and UNIT8 not defined */
+#endif /* UNIT8 not defined */
     };
 
     /* Compute preshifted images of multiplicand, mod n: */
     stage_mp_images(mpd, multiplicand);
 
     /* To optimize msubs, set up msu_prod and nmsu_prod: */
-    msu_prod = msbptr(prod, global_precision);	/* Get ptr to MSU of prod */
+    msu_prod = msbptr(prod, global_precision); /* Get ptr to MSU of prod */
     nmsu_prod = msu_prod;
-    post_lowerunit(nmsu_prod);	/* Get next-MSU of prod */
+    post_lowerunit(nmsu_prod); /* Get next-MSU of prod */
 
     /*
      * To understand this algorithm, it would be helpful to first
@@ -976,7 +1014,7 @@ int merritt_modmult(register unitptr prod,
      * half as many subtracts as Russian peasant.
      */
 
-    mp_init(prod, 0);		/* Initialize product to 0. */
+    mp_init(prod, 0); /* Initialize product to 0. */
 
     /*
      * The way mp_modmult is actually used in cryptographic
@@ -984,157 +1022,157 @@ int merritt_modmult(register unitptr prod,
      * multiplicand.  So there is no need to optimize for that
      * condition.
      */
-/*      if (testeq(multiplicand,0))
-       return 0; *//* zero multiplicand means zero product */
+    /*      if (testeq(multiplicand,0))
+           return 0; *//* zero multiplicand means zero product */
     /* Normalize and compute number of units in multiplier first: */
     normalize(multiplier, mprec);
-    if (mprec == 0)		/* if precision of multiplier is 0 */
-	return 0;		/* zero multiplier means zero product */
-    make_msbptr(multiplier, mprec);	/* start at MSU of multiplier */
+    if (mprec == 0)                 /* if precision of multiplier is 0 */
+        return 0;                   /* zero multiplier means zero product */
+    make_msbptr(multiplier, mprec); /* start at MSU of multiplier */
 
     while (mprec--) { /* Loop for the number of units in the multiplier */
-	/*
-	 * Shift the product one whole unit to the left.
-	 * This is part of the multiply phase of modmult.
-	 */
+        /*
+         * Shift the product one whole unit to the left.
+         * This is part of the multiply phase of modmult.
+         */
 
-	mp_lshift_unit(prod);
+        mp_lshift_unit(prod);
 
-	/* 
-	 * The product may have grown by as many as UNITSIZE
-	 * bits.  That's why we have global_precision set to the
-	 * size of the modulus plus UNITSIZE slop bits.
-	 * Now reduce the product back down by conditionally
-	 * subtracting the preshifted images of the modulus.
-	 * This is part of the modulo reduction phase of modmult. 
-	 * The following loop is unrolled for speed, using macros...
+        /*
+         * The product may have grown by as many as UNITSIZE
+         * bits.  That's why we have global_precision set to the
+         * size of the modulus plus UNITSIZE slop bits.
+         * Now reduce the product back down by conditionally
+         * subtracting the preshifted images of the modulus.
+         * This is part of the modulo reduction phase of modmult.
+         * The following loop is unrolled for speed, using macros...
 
-	 for (i=UNITSIZE-1; i>=LOG_UNITSIZE; i--)
-	 if (mp_compare(prod,moduli[i]) >= 0)
-	 mp_sub(prod,moduli[i]);
-	 */
+         for (i=UNITSIZE-1; i>=LOG_UNITSIZE; i--)
+         if (mp_compare(prod,moduli[i]) >= 0)
+         mp_sub(prod,moduli[i]);
+         */
 
 #ifndef UNIT8
-#ifndef UNIT16			/* and not UNIT8 */
-	msubs(31);
-	msubs(30);
-	msubs(29);
-	msubs(28);
-	msubs(27);
-	msubs(26);
-	msubs(25);
-	msubs(24);
-	msubs(23);
-	msubs(22);
-	msubs(21);
-	msubs(20);
-	msubs(19);
-	msubs(18);
-	msubs(17);
-	msubs(16);
-#endif				/* not UNIT16 and not UNIT8 */
-	msubs(15);
-	msubs(14);
-	msubs(13);
-	msubs(12);
-	msubs(11);
-	msubs(10);
-	msubs(9);
-	msubs(8);
-#endif				/* not UNIT8 */
-	msubs(7);
-	msubs(6);
-	msubs(5);
+#ifndef UNIT16 /* and not UNIT8 */
+        msubs(31);
+        msubs(30);
+        msubs(29);
+        msubs(28);
+        msubs(27);
+        msubs(26);
+        msubs(25);
+        msubs(24);
+        msubs(23);
+        msubs(22);
+        msubs(21);
+        msubs(20);
+        msubs(19);
+        msubs(18);
+        msubs(17);
+        msubs(16);
+#endif /* not UNIT16 and not UNIT8 */
+        msubs(15);
+        msubs(14);
+        msubs(13);
+        msubs(12);
+        msubs(11);
+        msubs(10);
+        msubs(9);
+        msubs(8);
+#endif /* not UNIT8 */
+        msubs(7);
+        msubs(6);
+        msubs(5);
 #ifndef UNIT32
-	msubs(4);
+        msubs(4);
 #ifndef UNIT16
-	msubs(3);
+        msubs(3);
 #endif
 #endif
 
-	/*
-	 * Sniff each bit in the current unit of the multiplier, 
-	 * and conditionally add the corresponding preshifted 
-	 * image of the multiplicand to the product.
-	 * This is also part of the multiply phase of modmult.
-	 *
-	 * The following loop is unrolled for speed, using macros...
+        /*
+         * Sniff each bit in the current unit of the multiplier,
+         * and conditionally add the corresponding preshifted
+         * image of the multiplicand to the product.
+         * This is also part of the multiply phase of modmult.
+         *
+         * The following loop is unrolled for speed, using macros...
 
-	 for (i=UNITSIZE-1; i>=0; i--)
-	 if (*multiplier & power_of_2(i))
-	 mp_add(prod,mpd[i]);
-	 */
+         for (i=UNITSIZE-1; i>=0; i--)
+         if (*multiplier & power_of_2(i))
+         mp_add(prod,mpd[i]);
+         */
 #ifndef UNIT8
-#ifndef UNIT16			/* and not UNIT8 */
-	sniffadd(31);
-	sniffadd(30);
-	sniffadd(29);
-	sniffadd(28);
-	sniffadd(27);
-	sniffadd(26);
-	sniffadd(25);
-	sniffadd(24);
-	sniffadd(23);
-	sniffadd(22);
-	sniffadd(21);
-	sniffadd(20);
-	sniffadd(19);
-	sniffadd(18);
-	sniffadd(17);
-	sniffadd(16);
-#endif				/* not UNIT16 and not UNIT8 */
-	sniffadd(15);
-	sniffadd(14);
-	sniffadd(13);
-	sniffadd(12);
-	sniffadd(11);
-	sniffadd(10);
-	sniffadd(9);
-	sniffadd(8);
-#endif				/* not UNIT8 */
-	sniffadd(7);
-	sniffadd(6);
-	sniffadd(5);
-	sniffadd(4);
-	sniffadd(3);
-	sniffadd(2);
-	sniffadd(1);
-	sniffadd(0);
+#ifndef UNIT16 /* and not UNIT8 */
+        sniffadd(31);
+        sniffadd(30);
+        sniffadd(29);
+        sniffadd(28);
+        sniffadd(27);
+        sniffadd(26);
+        sniffadd(25);
+        sniffadd(24);
+        sniffadd(23);
+        sniffadd(22);
+        sniffadd(21);
+        sniffadd(20);
+        sniffadd(19);
+        sniffadd(18);
+        sniffadd(17);
+        sniffadd(16);
+#endif /* not UNIT16 and not UNIT8 */
+        sniffadd(15);
+        sniffadd(14);
+        sniffadd(13);
+        sniffadd(12);
+        sniffadd(11);
+        sniffadd(10);
+        sniffadd(9);
+        sniffadd(8);
+#endif /* not UNIT8 */
+        sniffadd(7);
+        sniffadd(6);
+        sniffadd(5);
+        sniffadd(4);
+        sniffadd(3);
+        sniffadd(2);
+        sniffadd(1);
+        sniffadd(0);
 
-	/*
-	 * The product may have grown by as many as LOG_UNITSIZE+1
-	 * bits.
-	 * Now reduce the product back down by conditionally 
-	 * subtracting LOG_UNITSIZE+1 preshifted images of the 
-	 * modulus.  This is the modulo reduction phase of modmult.
-	 *
-	 * The following loop is unrolled for speed, using macros...
+        /*
+         * The product may have grown by as many as LOG_UNITSIZE+1
+         * bits.
+         * Now reduce the product back down by conditionally
+         * subtracting LOG_UNITSIZE+1 preshifted images of the
+         * modulus.  This is the modulo reduction phase of modmult.
+         *
+         * The following loop is unrolled for speed, using macros...
 
-	 for (i=LOG_UNITSIZE; i>=0; i--)
-	 if (mp_compare(prod,moduli[i]) >= 0) 
-	 mp_sub(prod,moduli[i]); 
-	 */
+         for (i=LOG_UNITSIZE; i>=0; i--)
+         if (mp_compare(prod,moduli[i]) >= 0)
+         mp_sub(prod,moduli[i]);
+         */
 
 #ifndef UNIT8
 #ifndef UNIT16
-	msubs(5);
+        msubs(5);
 #endif
-	msubs(4);
+        msubs(4);
 #endif
-	msubs(3);
-	msubs(2);
-	msubs(1);
-	msubs(0);
+        msubs(3);
+        msubs(2);
+        msubs(1);
+        msubs(0);
 
-	/* Bump pointer to next lower unit of multiplier: */
-	post_lowerunit(multiplier);
+        /* Bump pointer to next lower unit of multiplier: */
+        post_lowerunit(multiplier);
 
-    }				/* Loop for the number of units in the
-				   multiplier */
+    } /* Loop for the number of units in the
+         multiplier */
 
-    return 0;			/* normal return */
+    return 0; /* normal return */
 
-}				/* merritt_modmult */
+} /* merritt_modmult */
 
 #undef msubs
 #undef sniffadd
@@ -1153,15 +1191,14 @@ void merritt_burn(void)
     unitfill0(&(moduli_buf[0][0]), (UNITSIZE - 1) * MAX_UNIT_PRECISION);
     unitfill0(msu_moduli, UNITSIZE);
     unitfill0(nmsu_moduli, UNITSIZE);
-}				/* merritt_burn() */
+} /* merritt_burn() */
 
 /******* end of Merritt's MODMULT stuff. *******/
 /*=========================================================================*/
-#endif				/* MERRITT */
+#endif /* MERRITT */
 
-
-#ifdef UPTON_OR_SMITH		/* Used by Upton's and Smith's
-				   modmult algorithms */
+#ifdef UPTON_OR_SMITH /* Used by Upton's and Smith's \
+                         modmult algorithms */
 
 /*
  * Jimmy Upton's multiprecision modmult algorithm in C.
@@ -1171,7 +1208,7 @@ void merritt_burn(void)
  * are used only by Upton's modmult algorithm...
  */
 
-short munit_prec;		/* global_precision expressed in MULTUNITs */
+short munit_prec; /* global_precision expressed in MULTUNITs */
 
 /*
  * Note that since the SPARC CPU has no hardware integer multiply
@@ -1202,21 +1239,21 @@ short munit_prec;		/* global_precision expressed in MULTUNITs */
  */
 
 #ifndef mp_smul
-void mp_smul(MULTUNIT * prod, MULTUNIT * multiplicand, MULTUNIT multiplier)
+void mp_smul(MULTUNIT *prod, MULTUNIT *multiplicand, MULTUNIT multiplier)
 {
     short i;
     unsigned long p, carry;
 
     carry = 0;
     for (i = 0; i < munit_prec; ++i) {
-	p = (unsigned long) multiplier **post_higherunit(multiplicand);
-	p += *prod + carry;
-	*post_higherunit(prod) = (MULTUNIT) p;
-	carry = p >> MULTUNITSIZE;
+        p = (unsigned long)multiplier * *post_higherunit(multiplicand);
+        p += *prod + carry;
+        *post_higherunit(prod) = (MULTUNIT)p;
+        carry = p >> MULTUNITSIZE;
     }
     /* Add carry to the next higher word of product / dividend */
-    *prod += (MULTUNIT) carry;
-}				/* mp_smul */
+    *prod += (MULTUNIT)carry;
+} /* mp_smul */
 
 #endif
 
@@ -1233,26 +1270,24 @@ void mp_dmul(unitptr prod, unitptr multiplicand, unitptr multiplier)
     register MULTUNIT *p_multiplicand, *p_multiplier;
     register MULTUNIT *prodp;
 
-
-    unitfill0(prod, global_precision * 2);	/* Pre-zero prod */
+    unitfill0(prod, global_precision * 2); /* Pre-zero prod */
     /* Calculate precision in units of MULTUNIT */
     munit_prec = global_precision * UNITSIZE / MULTUNITSIZE;
-    p_multiplicand = (MULTUNIT *) multiplicand;
-    p_multiplier = (MULTUNIT *) multiplier;
-    prodp = (MULTUNIT *) prod;
+    p_multiplicand = (MULTUNIT *)multiplicand;
+    p_multiplier = (MULTUNIT *)multiplier;
+    prodp = (MULTUNIT *)prod;
     make_lsbptr(p_multiplicand, munit_prec);
     make_lsbptr(p_multiplier, munit_prec);
     make_lsbptr(prodp, munit_prec * 2);
     /* Multiply multiplicand by each word in multiplier, accumulating prod: */
     for (i = 0; i < munit_prec; ++i)
-	mp_smul(post_higherunit(prodp),
-		p_multiplicand, *post_higherunit(p_multiplier));
-}				/* mp_dmul */
-#endif				/* mp_dmul */
+        mp_smul(post_higherunit(prodp), p_multiplicand, *post_higherunit(p_multiplier));
+} /* mp_dmul */
+#endif /* mp_dmul */
 
 static unit ALIGN modulus[MAX_UNIT_PRECISION];
-static short nbits;		/* number of modulus significant bits */
-#endif				/* UPTON_OR_SMITH */
+static short nbits; /* number of modulus significant bits */
+#endif              /* UPTON_OR_SMITH */
 
 #ifdef UPTON
 
@@ -1266,12 +1301,12 @@ static short nbits;		/* number of modulus significant bits */
 
 static unit ALIGN reciprocal[MAX_UNIT_PRECISION];
 static unit ALIGN dhi[MAX_UNIT_PRECISION];
-static unit ALIGN d_data[MAX_UNIT_PRECISION * 2];	/* double-wide
-							   register */
-static unit ALIGN e_data[MAX_UNIT_PRECISION * 2];	/* double-wide
-							   register */
-static unit ALIGN f_data[MAX_UNIT_PRECISION * 2];	/* double-wide
-							   register */
+static unit ALIGN d_data[MAX_UNIT_PRECISION * 2]; /* double-wide
+                                                     register */
+static unit ALIGN e_data[MAX_UNIT_PRECISION * 2]; /* double-wide
+                                                     register */
+static unit ALIGN f_data[MAX_UNIT_PRECISION * 2]; /* double-wide
+                                                     register */
 
 static short nbitsDivUNITSIZE;
 static short nbitsModUNITSIZE;
@@ -1291,9 +1326,8 @@ int stage_upton_modulus(unitptr n)
     nbits = countbits(modulus);
     nbitsDivUNITSIZE = nbits / UNITSIZE;
     nbitsModUNITSIZE = nbits % UNITSIZE;
-    return 0;			/* normal return */
-}				/* stage_upton_modulus */
-
+    return 0; /* normal return */
+} /* stage_upton_modulus */
 
 /*
  * Upton's algorithm performs a multiply combined with a modulo operation.
@@ -1320,7 +1354,7 @@ int upton_modmult(unitptr prod, unitptr multiplicand, unitptr multiplier)
 #else
     d1 = d + orig_precision - nbitsDivUNITSIZE;
 #endif
-    mp_move(dhi, d1);		/* Don't screw up d, we need it later */
+    mp_move(dhi, d1); /* Don't screw up d, we need it later */
     mp_shift_right_bits(dhi, nbitsModUNITSIZE);
 
     mp_dmul(e, dhi, reciprocal); /* Note - reciprocal has nbits+1 bits */
@@ -1344,11 +1378,11 @@ int upton_modmult(unitptr prod, unitptr multiplicand, unitptr multiplier)
 
     /* Should never have to do this final subtract more than twice: */
     while (mp_compare(d, modulus) > 0)
-	mp_sub(d, modulus);
+        mp_sub(d, modulus);
 
     mp_move(prod, d);
-    return 0;			/* normal return */
-}				/* upton_modmult */
+    return 0; /* normal return */
+} /* upton_modmult */
 
 /* Upton's mp_modmult function leaves some internal arrays in memory,
    so we have to call modmult_burn() at the end of mp_modexp.
@@ -1365,13 +1399,13 @@ void upton_burn(void)
     unitfill0(e_data, MAX_UNIT_PRECISION * 2);
     unitfill0(f_data, MAX_UNIT_PRECISION * 2);
     nbits = nbitsDivUNITSIZE = nbitsModUNITSIZE = 0;
-}				/* upton_burn */
+} /* upton_burn */
 
 /******* end of Upton's MODMULT stuff. *******/
 /*=========================================================================*/
-#endif				/* UPTON */
+#endif /* UPTON */
 
-#ifdef SMITH			/* using Thad Smith's modmult algorithm */
+#ifdef SMITH /* using Thad Smith's modmult algorithm */
 
 /*
  * Thad Smith's implementation of multiprecision modmult algorithm in C.
@@ -1400,24 +1434,24 @@ void upton_burn(void)
 static unit ALIGN ds_data[MAX_UNIT_PRECISION * 2 + 2];
 
 static unit mod_quotient[4];
-static unit mod_divisor[4];	/* 2 most signif. MULTUNITs of modulus */
+static unit mod_divisor[4]; /* 2 most signif. MULTUNITs of modulus */
 
-static MULTUNIT *modmpl;	/* ptr to modulus least significant
-				   ** MULTUNIT                      */
+static MULTUNIT *modmpl; /* ptr to modulus least significant
+                          ** MULTUNIT                      */
 #if defined(WIN32) && defined(USE_WIN32_ASSEMBLER)
-int  mshift;                          /* number of bits for
-                                      ** recip scaling          */
-MULTUNIT reciph;                      /* MSunit of scaled recip */
-MULTUNIT recipl;                      /* LSunit of scaled recip */
+int mshift;      /* number of bits for
+                 ** recip scaling          */
+MULTUNIT reciph; /* MSunit of scaled recip */
+MULTUNIT recipl; /* LSunit of scaled recip */
 #else
-static int  mshift;                   /* number of bits for
-                                      ** recip scaling          */
-static MULTUNIT reciph;               /* MSunit of scaled recip */
-static MULTUNIT recipl;               /* LSunit of scaled recip */
+static int mshift;      /* number of bits for
+                        ** recip scaling          */
+static MULTUNIT reciph; /* MSunit of scaled recip */
+static MULTUNIT recipl; /* LSunit of scaled recip */
 #endif
 
-static short modlenMULTUNITS;	/* length of modulus in MULTUNITs */
-static MULTUNIT mutemp;		/* temporary */
+static short modlenMULTUNITS; /* length of modulus in MULTUNITs */
+static MULTUNIT mutemp;       /* temporary */
 
 /*
  * The routines mp_smul and mp_dmul are the same as for UPTON and
@@ -1428,16 +1462,16 @@ static MULTUNIT mutemp;		/* temporary */
  */
 
 #ifndef mp_set_recip
-#define mp_set_recip(rh,rl,m)	/* null */
+#define mp_set_recip(rh, rl, m) /* null */
 #else
 /* setup routine for external mp_quo_digit */
 void mp_set_recip(MULTUNIT rh, MULTUNIT rl, int m);
 #endif
-MULTUNIT mp_quo_digit(MULTUNIT * dividend);
+MULTUNIT mp_quo_digit(MULTUNIT *dividend);
 
-#ifdef	MULTUNIT_SIZE_SAME
-#define mp_musubb mp_subb	/* use existing routine */
-#else				/* ! MULTUNIT_SIZE_SAME */
+#ifdef MULTUNIT_SIZE_SAME
+#define mp_musubb mp_subb /* use existing routine */
+#else                     /* ! MULTUNIT_SIZE_SAME */
 
 /*
  * This performs the same function as mp_subb, but with MULTUNITs.
@@ -1453,24 +1487,23 @@ MULTUNIT mp_quo_digit(MULTUNIT * dividend);
  * multiprecision subtract of MULTUNITs with borrow, r2 from r1, result in r1
  * borrow is incoming borrow flag-- value should be 0 or 1
  */
-boolean mp_musubb
- (register MULTUNIT * r1, register MULTUNIT * r2, register boolean borrow)
+boolean mp_musubb(register MULTUNIT *r1, register MULTUNIT *r2, register boolean borrow)
 {
-    register ulint x;		/* won't work if sizeof(MULTUNIT)==
-				   sizeof(long)     */
-    short precision;		/* number of MULTUNITs to subtract */
+    register ulint x; /* won't work if sizeof(MULTUNIT)==
+                         sizeof(long)     */
+    short precision;  /* number of MULTUNITs to subtract */
     precision = global_precision * MULTUNITs_perunit;
     make_lsbptr(r1, precision);
     make_lsbptr(r2, precision);
     while (precision--) {
-	x = (ulint) * r1 - (ulint) * post_higherunit(r2) - (ulint) borrow;
-	*post_higherunit(r1) = x;
-	borrow = (((1L << MULTUNITSIZE) & x) != 0L);
+        x = (ulint)*r1 - (ulint)*post_higherunit(r2) - (ulint)borrow;
+        *post_higherunit(r1) = x;
+        borrow = (((1L << MULTUNITSIZE) & x) != 0L);
     }
     return (borrow);
-}				/* mp_musubb */
-#endif				/* mp_musubb */
-#endif				/* MULTUNIT_SIZE_SAME */
+} /* mp_musubb */
+#endif /* mp_musubb */
+#endif /* MULTUNIT_SIZE_SAME */
 
 /*
  * The function mp_quo_digit is the heart of Smith's modulo reduction,
@@ -1499,34 +1532,32 @@ boolean mp_musubb
  * optimum (which is corrected in smith_modmult) more often than the
  * prototype version, the faster execution in C more than makes up
  * for the difference.
- * 
+ *
  * Parameter: dividend - points to the most significant MULTUNIT
- *      of the dividend.  Note that dividend actually contains the 
- *      one's complement of the actual dividend value (see comments for 
+ *      of the dividend.  Note that dividend actually contains the
+ *      one's complement of the actual dividend value (see comments for
  *      smith_modmult).
- * 
+ *
  *  Return: the trial quotient digit resulting from dividing the first
- *      three MULTUNITs at dividend by the upper two MULTUNITs of the 
+ *      three MULTUNITs at dividend by the upper two MULTUNITs of the
  *      modulus.
  */
 
-/* #define ASM_PROTOTYPE *//* undefined: use C-optimized version */
+/* #define ASM_PROTOTYPE */ /* undefined: use C-optimized version */
 
 #ifndef mp_quo_digit
-MULTUNIT mp_quo_digit(MULTUNIT * dividend)
+MULTUNIT mp_quo_digit(MULTUNIT *dividend)
 {
     unsigned long q, q0, q1, q2;
     unsigned short lsb_factor;
 
-/*
- * Compute the least significant product group.
- * The last terms of q1 and q2 perform upward rounding, which is
- * needed to guarantee that the result not be too small.
- */
-    q1 = (dividend[tohigher(-2)] ^ MULTUNIT_mask) * (unsigned long) reciph
-	+ reciph;
-    q2 = (dividend[tohigher(-1)] ^ MULTUNIT_mask) * (unsigned long) recipl
-	+ (1L << MULTUNITSIZE);
+    /*
+     * Compute the least significant product group.
+     * The last terms of q1 and q2 perform upward rounding, which is
+     * needed to guarantee that the result not be too small.
+     */
+    q1 = (dividend[tohigher(-2)] ^ MULTUNIT_mask) * (unsigned long)reciph + reciph;
+    q2 = (dividend[tohigher(-1)] ^ MULTUNIT_mask) * (unsigned long)recipl + (1L << MULTUNITSIZE);
 #ifdef ASM_PROTOTYPE
     lsb_factor = 1 & (q1 >> MULTUNITSIZE) & (q2 >> MULTUNITSIZE);
     q = q1 + q2;
@@ -1535,67 +1566,66 @@ MULTUNIT mp_quo_digit(MULTUNIT * dividend)
        one bit while shifting in the carry bit.
      */
     q0 = (q1 > ~q2 ? DMULTUNIT_msb : 0) | (q >> 1);
-#else				/* optimized C version */
+#else /* optimized C version */
     q0 = (q1 >> 1) + (q2 >> 1) + 1;
 #endif
 
-/*      Compute the middle significant product group.   */
+    /*      Compute the middle significant product group.   */
 
-    q1 = (dividend[tohigher(-1)] ^ MULTUNIT_mask) * (unsigned long) reciph;
-    q2 = (dividend[0] ^ MULTUNIT_mask) * (unsigned long) recipl;
+    q1 = (dividend[tohigher(-1)] ^ MULTUNIT_mask) * (unsigned long)reciph;
+    q2 = (dividend[0] ^ MULTUNIT_mask) * (unsigned long)recipl;
 #ifdef ASM_PROTOTYPE
     q = q1 + q2;
     q = (q1 > ~q2 ? DMULTUNIT_msb : 0) | (q >> 1);
 
-/*      Add in the most significant word of the first group.
-   The last term takes care of the carry from adding the lsb's
-   that were shifted out prior to addition.
- */
+    /*      Add in the most significant word of the first group.
+       The last term takes care of the carry from adding the lsb's
+       that were shifted out prior to addition.
+     */
     q = (q0 >> MULTUNITSIZE) + q + (lsb_factor & (q1 ^ q2));
-#else				/* optimized C version */
+#else /* optimized C version */
     q = (q0 >> MULTUNITSIZE) + (q1 >> 1) + (q2 >> 1) + 1;
 #endif
 
-/*      Compute the most significant term and add in the others */
+    /*      Compute the most significant term and add in the others */
 
-    q = (q >> (MULTUNITSIZE - 2)) +
-	(((dividend[0] ^ MULTUNIT_mask) * (unsigned long) reciph) << 1);
+    q = (q >> (MULTUNITSIZE - 2)) + (((dividend[0] ^ MULTUNIT_mask) * (unsigned long)reciph) << 1);
     q >>= mshift;
 
-/*      Prevent overflow and then wipe out the intermediate results. */
+    /*      Prevent overflow and then wipe out the intermediate results. */
 
-    mutemp = (MULTUNIT) min(q, (1L << MULTUNITSIZE) - 1);
+    mutemp = (MULTUNIT)min(q, (1L << MULTUNITSIZE) - 1);
     q = q0 = q1 = q2 = 0;
     lsb_factor = 0;
-    (void) lsb_factor;
+    (void)lsb_factor;
     return mutemp;
 }
-#endif				/* mp_quo_digit */
+#endif /* mp_quo_digit */
 
 /*
  * stage_smith_modulus() - Prepare for a Smith modmult.
- * 
+ *
  * Calculate the reciprocal of modulus with a precision of two MULTUNITs.
  * Assumes that global_precision has already been adjusted to the
  * size of the modulus, plus SLOP_BITS.
- * 
+ *
  * Note: This routine was designed to work with large values and
  * doesn't have the necessary testing or handling to work with a
  * modulus having less than three significant units.  For such cases,
  * the separate multiply and modulus routines can be used.
- * 
+ *
  * stage_smith_modulus() is aliased to stage_modulus().
  */
 int stage_smith_modulus(unitptr n_modulus)
 {
     int original_precision;
-    int sigmod;			/* significant units in modulus */
-    unitptr mp;			/* modulus most significant pointer */
-    MULTUNIT *mpm;		/* reciprocal pointer */
-    int prec;			/* precision of reciprocal calc in units */
+    int sigmod;    /* significant units in modulus */
+    unitptr mp;    /* modulus most significant pointer */
+    MULTUNIT *mpm; /* reciprocal pointer */
+    int prec;      /* precision of reciprocal calc in units */
 
     mp_move(modulus, n_modulus);
-    modmpl = (MULTUNIT *) modulus;
+    modmpl = (MULTUNIT *)modulus;
     modmpl = lsbptr(modmpl, global_precision * MULTUNITs_perunit);
     nbits = countbits(modulus);
     modlenMULTUNITS = (nbits + MULTUNITSIZE - 1) / MULTUNITSIZE;
@@ -1608,12 +1638,12 @@ int stage_smith_modulus(unitptr n_modulus)
     mp = modulus;
     sigmod = significance(modulus);
     rescale(mp, original_precision, sigmod);
-/* prec is the unit precision required for 3 MULTUNITs */
+    /* prec is the unit precision required for 3 MULTUNITs */
     prec = (3 + (MULTUNITs_perunit - 1)) / MULTUNITs_perunit;
     set_precision(prec);
 
     /* set mp = ptr to most significant units of modulus, then move
-     * the most significant units to mp_divisor 
+     * the most significant units to mp_divisor
      */
     mp = msbptr(mp, sigmod) - tohigher(prec - 1);
     unmake_lsbptr(mp, prec);
@@ -1632,16 +1662,16 @@ int stage_smith_modulus(unitptr n_modulus)
     /* round up, rescaling if necessary */
     mp_inc(mod_quotient);
     if (countbits(mod_quotient) > 2 * MULTUNITSIZE) {
-	mp_shift_right_bits(mod_quotient, 1);
-	mshift--;		/* now  0 <= mshift <= MULTUNITSIZE */
+        mp_shift_right_bits(mod_quotient, 1);
+        mshift--; /* now  0 <= mshift <= MULTUNITSIZE */
     }
-    mpm = lsbptr((MULTUNIT *) mod_quotient, prec * MULTUNITs_perunit);
+    mpm = lsbptr((MULTUNIT *)mod_quotient, prec * MULTUNITs_perunit);
     recipl = *post_higherunit(mpm);
     reciph = *mpm;
     mp_set_recip(reciph, recipl, mshift);
     set_precision(original_precision);
-    return 0;			/* normal return */
-}				/* stage_smith_modulus */
+    return 0; /* normal return */
+} /* stage_smith_modulus */
 
 /* Smith's algorithm performs a multiply combined with a modulo operation.
    Computes:  prod = (multiplicand*multiplier) mod modulus
@@ -1650,97 +1680,94 @@ int stage_smith_modulus(unitptr n_modulus)
  */
 int smith_modmult(unitptr prod, unitptr multiplicand, unitptr multiplier)
 {
-    unitptr d;			/* ptr to product */
-    MULTUNIT *dmph, *dmpl, *dmp;	/* ptrs to dividend (high, low, first)
-					 * aligned for subtraction         */
-/* Note that dmph points one MULTUNIT higher than indicated by
-   global precision.  This allows us to zero out a word one higher than
-   the normal precision.
- */
+    unitptr d;                   /* ptr to product */
+    MULTUNIT *dmph, *dmpl, *dmp; /* ptrs to dividend (high, low, first)
+                                  * aligned for subtraction         */
+                                 /* Note that dmph points one MULTUNIT higher than indicated by
+                                    global precision.  This allows us to zero out a word one higher than
+                                    the normal precision.
+                                  */
     short orig_precision;
-    short nqd;			/* number of quotient digits remaining to
-				 * be generated                            */
-    short dmi;			/* number of significant MULTUNITs in
-				   product */
+    short nqd; /* number of quotient digits remaining to
+                * be generated                            */
+    short dmi; /* number of significant MULTUNITs in
+                  product */
 
-    d = ds_data + 1;		/* room for leading MSB if HIGHFIRST */
+    d = ds_data + 1; /* room for leading MSB if HIGHFIRST */
     orig_precision = global_precision;
     mp_dmul(d, multiplicand, multiplier);
 
     rescale(d, orig_precision * 2, orig_precision * 2 + 1);
     set_precision(orig_precision * 2 + 1);
-    *msbptr(d, global_precision) = 0;	/* leading 0 unit */
+    *msbptr(d, global_precision) = 0; /* leading 0 unit */
 
-/*      We now start working with MULTUNITs.
-   Determine the most significant MULTUNIT of the product so we don't
-   have to process leading zeros in our divide loop.
- */
+    /*      We now start working with MULTUNITs.
+       Determine the most significant MULTUNIT of the product so we don't
+       have to process leading zeros in our divide loop.
+     */
     dmi = significance(d) * MULTUNITs_perunit;
     if (dmi >= modlenMULTUNITS) {
-	/* Make dividend negative.  This allows the use of mp_smul to
-	 * "subtract" the product of the modulus and the trial divisor
-	 * by actually adding to a negative dividend.
-	 * The one's complement of the dividend is used, since it causes
-	 * a zero value to be represented as all ones.  This facilitates
-	 * testing the result for possible overflow, since a sign bit
-	 * indicates that no adjustment is necessary, and we should not
-	 * attempt to adjust if the result of the addition is zero.
-	 */
-	mp_inc(d);
-	mp_neg(d);
-	set_precision(orig_precision);
-	munit_prec = global_precision * UNITSIZE / MULTUNITSIZE;
+        /* Make dividend negative.  This allows the use of mp_smul to
+         * "subtract" the product of the modulus and the trial divisor
+         * by actually adding to a negative dividend.
+         * The one's complement of the dividend is used, since it causes
+         * a zero value to be represented as all ones.  This facilitates
+         * testing the result for possible overflow, since a sign bit
+         * indicates that no adjustment is necessary, and we should not
+         * attempt to adjust if the result of the addition is zero.
+         */
+        mp_inc(d);
+        mp_neg(d);
+        set_precision(orig_precision);
+        munit_prec = global_precision * UNITSIZE / MULTUNITSIZE;
 
-	/* Set msb, lsb, and normal ptrs of dividend */
-	dmph = lsbptr((MULTUNIT *) d, (orig_precision * 2 + 1) *
-		      MULTUNITs_perunit) + tohigher(dmi);
-	nqd = dmi + 1 - modlenMULTUNITS;
-	dmpl = dmph - tohigher(modlenMULTUNITS);
+        /* Set msb, lsb, and normal ptrs of dividend */
+        dmph = lsbptr((MULTUNIT *)d, (orig_precision * 2 + 1) * MULTUNITs_perunit) + tohigher(dmi);
+        nqd = dmi + 1 - modlenMULTUNITS;
+        dmpl = dmph - tohigher(modlenMULTUNITS);
 
-/*      
- * Divide loop.
- * Each iteration computes the next quotient MULTUNIT digit, then
- * multiplies the divisor (modulus) by the quotient digit and adds
- * it to the one's complement of the dividend (equivalent to
- * subtracting).  If the product was greater than the remaining dividend,
- * we get a non-negative result, in which case we subtract off the
- * modulus to get the proper negative remainder.
- */
-	for (; nqd; nqd--) {
-	    MULTUNIT q;		/* quotient trial digit */
+        /*
+         * Divide loop.
+         * Each iteration computes the next quotient MULTUNIT digit, then
+         * multiplies the divisor (modulus) by the quotient digit and adds
+         * it to the one's complement of the dividend (equivalent to
+         * subtracting).  If the product was greater than the remaining dividend,
+         * we get a non-negative result, in which case we subtract off the
+         * modulus to get the proper negative remainder.
+         */
+        for (; nqd; nqd--) {
+            MULTUNIT q; /* quotient trial digit */
 
-	    q = mp_quo_digit(dmph);
-	    if (q > 0) {
-		mp_smul(dmpl, modmpl, q);
+            q = mp_quo_digit(dmph);
+            if (q > 0) {
+                mp_smul(dmpl, modmpl, q);
 
-		/* Perform correction if q too large.
-		   *  This rarely occurs.
-		 */
-		if (!(*dmph & MULTUNIT_msb)) {
-		    dmp = dmpl;
-		    unmake_lsbptr(dmp, orig_precision *
-				  MULTUNITs_perunit);
-		    if (mp_musubb(dmp,
-				  (MULTUNIT *) modulus, 0))
-			(*dmph)--;
-		}
-	    }
-	    pre_lowerunit(dmph);
-	    pre_lowerunit(dmpl);
-	}
-	/* d contains the one's complement of the remainder. */
-	rescale(d, orig_precision * 2 + 1, orig_precision);
-	set_precision(orig_precision);
-	mp_neg(d);
-	mp_dec(d);
+                /* Perform correction if q too large.
+                 *  This rarely occurs.
+                 */
+                if (!(*dmph & MULTUNIT_msb)) {
+                    dmp = dmpl;
+                    unmake_lsbptr(dmp, orig_precision * MULTUNITs_perunit);
+                    if (mp_musubb(dmp, (MULTUNIT *)modulus, 0))
+                        (*dmph)--;
+                }
+            }
+            pre_lowerunit(dmph);
+            pre_lowerunit(dmpl);
+        }
+        /* d contains the one's complement of the remainder. */
+        rescale(d, orig_precision * 2 + 1, orig_precision);
+        set_precision(orig_precision);
+        mp_neg(d);
+        mp_dec(d);
     } else {
-	/* Product was less than modulus.  Return it. */
-	rescale(d, orig_precision * 2 + 1, orig_precision);
-	set_precision(orig_precision);
+        /* Product was less than modulus.  Return it. */
+        rescale(d, orig_precision * 2 + 1, orig_precision);
+        set_precision(orig_precision);
     }
     mp_move(prod, d);
-    return (0);			/* normal return */
-}				/* smith_modmult */
+    return (0); /* normal return */
+} /* smith_modmult */
 
 /* Smith's mp_modmult function leaves some internal arrays in memory,
    so we have to call modmult_burn() at the end of mp_modexp.
@@ -1759,11 +1786,11 @@ void smith_burn(void)
     reciph = recipl = 0;
     modlenMULTUNITS = mutemp = 0;
     mp_set_recip(0, 0, 0);
-}				/* smith_burn */
+} /* smith_burn */
 
 /*      End of Thad Smith's implementation of modmult. */
 
-#endif				/* SMITH */
+#endif /* SMITH */
 
 /* Returns number of significant bits in r */
 int countbits(unitptr r)
@@ -1773,13 +1800,13 @@ int countbits(unitptr r)
     register unit bitmask;
     init_bitsniffer(r, bitmask, prec, bits);
     return bits;
-}				/* countbits */
+} /* countbits */
 
 char *copyright_notice(void)
 /* force linker to include copyright notice in the executable object image. */
 {
     return ("(c)1986 Philip Zimmermann");
-}				/* copyright_notice */
+} /* copyright_notice */
 
 /*
  * Russian peasant combined exponentiation/modulo algorithm.
@@ -1787,8 +1814,8 @@ char *copyright_notice(void)
  * Computes:  expout = (expin**exponent) mod modulus
  * WARNING: All the arguments must be less than the modulus!
  */
-int mp_modexp(register unitptr expout, register unitptr expin,
-	      register unitptr exponent, register unitptr modulus)
+int mp_modexp(register unitptr expout, register unitptr expin, register unitptr exponent,
+              register unitptr modulus)
 {
     int bits;
     short oldprecision;
@@ -1797,28 +1824,28 @@ int mp_modexp(register unitptr expout, register unitptr expin,
     short eprec;
 
 #ifdef COUNTMULTS
-    tally_modmults = 0;		/* clear "number of modmults" counter */
-    tally_modsquares = 0;	/* clear "number of modsquares" counter */
-#endif				/* COUNTMULTS */
+    tally_modmults = 0;   /* clear "number of modmults" counter */
+    tally_modsquares = 0; /* clear "number of modsquares" counter */
+#endif                    /* COUNTMULTS */
     mp_init(expout, 1);
     if (testeq(exponent, 0)) {
-	if (testeq(expin, 0))
-	    return -1;		/* 0 to the 0th power means return error */
-	return 0;		/* otherwise, zero exponent means expout
-				   is 1 */
+        if (testeq(expin, 0))
+            return -1; /* 0 to the 0th power means return error */
+        return 0;      /* otherwise, zero exponent means expout
+                          is 1 */
     }
     if (testeq(modulus, 0))
-	return -2;		/* zero modulus means error */
-#if SLOP_BITS > 0		/* if there's room for sign bits */
+        return -2; /* zero modulus means error */
+#if SLOP_BITS > 0  /* if there's room for sign bits */
     if (mp_tstminus(modulus))
-	return -2;		/* negative modulus means error */
-#endif				/* SLOP_BITS > 0 */
+        return -2; /* negative modulus means error */
+#endif             /* SLOP_BITS > 0 */
     if (mp_compare(expin, modulus) >= 0)
-	return -3;		/* if expin >= modulus, return error */
+        return -3; /* if expin >= modulus, return error */
     if (mp_compare(exponent, modulus) >= 0)
-	return -4;		/* if exponent >= modulus, return error */
+        return -4; /* if exponent >= modulus, return error */
 
-    oldprecision = global_precision;	/* save global_precision */
+    oldprecision = global_precision; /* save global_precision */
     /* set smallest optimum precision for this modulus */
     set_precision(bits2units(countbits(modulus) + SLOP_BITS));
     /* rescale all these registers to global_precision we just defined */
@@ -1828,66 +1855,64 @@ int mp_modexp(register unitptr expout, register unitptr expin,
     rescale(expout, oldprecision, global_precision);
 
     if (stage_modulus(modulus)) {
-	set_precision(oldprecision);	/* restore original precision */
-	return -5;		/* unstageable modulus (STEWART algorithm) */
+        set_precision(oldprecision); /* restore original precision */
+        return -5;                   /* unstageable modulus (STEWART algorithm) */
     }
     /* normalize and compute number of bits in exponent first */
     init_bitsniffer(exponent, bitmask, eprec, bits);
 
     /* We can "optimize out" the first modsquare and modmult: */
-    bits--;			/* We know for sure at this point that
-				   bits>0 */
-    mp_move(expout, expin);	/*  expout = (1*1)*expin; */
+    bits--;                 /* We know for sure at this point that
+                               bits>0 */
+    mp_move(expout, expin); /*  expout = (1*1)*expin; */
     bump_bitsniffer(exponent, bitmask);
 
     while (bits--) {
-#ifdef MACTC5	    
-	    mac_poll_for_break();
+#ifdef MACTC5
+        mac_poll_for_break();
 #endif
-	poll_for_break();	/* polls keyboard, allows ctrl-C to
-				   abort program */
+        poll_for_break(); /* polls keyboard, allows ctrl-C to
+                             abort program */
 #ifdef COUNTMULTS
-	tally_modsquares++;	/* bump "number of modsquares" counter */
-#endif				/* COUNTMULTS */
-	mp_modsquare(product, expout);
-	if (sniff_bit(exponent, bitmask)) {
-	    mp_modmult(expout, product, expin);
+        tally_modsquares++; /* bump "number of modsquares" counter */
+#endif                      /* COUNTMULTS */
+        mp_modsquare(product, expout);
+        if (sniff_bit(exponent, bitmask)) {
+            mp_modmult(expout, product, expin);
 #ifdef COUNTMULTS
-	    tally_modmults++;	/* bump "number of modmults" counter */
-#endif				/* COUNTMULTS */
-	} else {
-	    mp_move(expout, product);
-	}
-	bump_bitsniffer(exponent, bitmask);
-    }				/* while bits-- */
-    mp_burn(product);		/* burn the evidence on the stack */
-    modmult_burn();		/* ask mp_modmult to also burn its
-				   own evidence */
+            tally_modmults++; /* bump "number of modmults" counter */
+#endif                        /* COUNTMULTS */
+        } else {
+            mp_move(expout, product);
+        }
+        bump_bitsniffer(exponent, bitmask);
+    }                 /* while bits-- */
+    mp_burn(product); /* burn the evidence on the stack */
+    modmult_burn();   /* ask mp_modmult to also burn its
+                         own evidence */
 
-#ifdef COUNTMULTS		/* diagnostic analysis */
+#ifdef COUNTMULTS /* diagnostic analysis */
     {
-	long atomic_mults;
-	unsigned int unitcount, totalmults;
-	unitcount = bits2units(countbits(modulus));
-	/* calculation assumes modsquare takes as long as a modmult: */
-	atomic_mults = (long) tally_modmults *(unitcount * unitcount);
-	atomic_mults += (long) tally_modsquares *(unitcount * unitcount);
-	printf("%ld atomic mults for ", atomic_mults);
-	printf("%d+%d = %d modsqr+modmlt, at %d bits, %d words.\n",
-	       tally_modsquares, tally_modmults,
-	       tally_modsquares + tally_modmults,
-	       countbits(modulus), unitcount);
+        long atomic_mults;
+        unsigned int unitcount, totalmults;
+        unitcount = bits2units(countbits(modulus));
+        /* calculation assumes modsquare takes as long as a modmult: */
+        atomic_mults = (long)tally_modmults * (unitcount * unitcount);
+        atomic_mults += (long)tally_modsquares * (unitcount * unitcount);
+        printf("%ld atomic mults for ", atomic_mults);
+        printf("%d+%d = %d modsqr+modmlt, at %d bits, %d words.\n", tally_modsquares,
+               tally_modmults, tally_modsquares + tally_modmults, countbits(modulus), unitcount);
     }
-#endif				/* COUNTMULTS */
+#endif /* COUNTMULTS */
 
-    set_precision(oldprecision);	/* restore original precision */
+    set_precision(oldprecision); /* restore original precision */
 
     /* Do an explicit reference to the copyright notice so that the linker
        will be forced to include it in the executable object image... */
-    copyright_notice();		/* has no real effect at run time */
+    copyright_notice(); /* has no real effect at run time */
 
-    return 0;			/* normal return */
-}				/* mp_modexp */
+    return 0; /* normal return */
+} /* mp_modexp */
 
 /*
  * This is a faster modexp for moduli with a known factorisation into two
@@ -1896,16 +1921,16 @@ int mp_modexp(register unitptr expout, register unitptr expin,
  * mod q, and then combine the results.  This relies on a number of
  * precomputed values, but does not actually require the modulus n or the
  * exponent e.
- * 
+ *
  * expout = expin ^ e mod (p*q).
  * We form this by evaluating
  * p2 = (expin ^ e) mod p and
  * q2 = (expin ^ e) mod q
  * and then combining the two by the CRT.
- * 
+ *
  * Two optimisations of this are possible.  First, we can reduce expin
  * modulo p and q before starting.
- * 
+ *
  * Second, since we know the factorisation of p and q (trivially derived
  * from the factorisation of n = p*q), and expin is relatively prime to
  * both p and q, we can use Euler's theorem, expin^phi(m) = 1 (mod m),
@@ -1915,7 +1940,7 @@ int mp_modexp(register unitptr expout, register unitptr expin,
  * then combining these two speedups, we only need to evaluate
  * p2 = ((expin mod p) ^ ep) mod p and
  * q2 = ((expin mod q) ^ eq) mod q.
- * 
+ *
  * Now we need to apply the CRT.  Starting with
  * expout = p2 (mod p) and
  * expout = q2 (mod q)
@@ -1927,39 +1952,39 @@ int mp_modexp(register unitptr expout, register unitptr expin,
  * Multiplying by u on both sides gives k = u*(q2-p2) (mod q).
  * Since we want 0 <= k < q, we can thus find k as
  * k = (u * (q2-p2)) mod q.
- * 
+ *
  * Once we have k, evaluating p2 + p * k is easy, and
  * that gives us the result.
- * 
+ *
  * In the detailed implementation, there is a temporary, temp, used to
  * hold intermediate results, p2 is held in expout, and q2 is used as a
  * temporary in the final step when it is no longer needed.  With that,
  * you should be able to understand the code below.
  */
-int mp_modexp_crt(unitptr expout, unitptr expin,
-		  unitptr p, unitptr q, unitptr ep, unitptr eq, unitptr u)
+int mp_modexp_crt(unitptr expout, unitptr expin, unitptr p, unitptr q, unitptr ep, unitptr eq,
+                  unitptr u)
 {
     unit q2[MAX_UNIT_PRECISION];
     unit temp[MAX_UNIT_PRECISION];
     int status;
 
-/*      First, compiute p2 (physically held in M) */
+    /*      First, compiute p2 (physically held in M) */
 
-/*      p2 = [ (expin mod p) ^ ep ] mod p               */
-    mp_mod(temp, expin, p);	/* temp = expin mod p  */
+    /*      p2 = [ (expin mod p) ^ ep ] mod p               */
+    mp_mod(temp, expin, p); /* temp = expin mod p  */
     status = mp_modexp(expout, temp, ep, p);
-    if (status < 0) {		/* mp_modexp returned an error. */
-	mp_init(expout, 1);
-	return status;		/* error return */
+    if (status < 0) { /* mp_modexp returned an error. */
+        mp_init(expout, 1);
+        return status; /* error return */
     }
-/*      And the same thing for q2 */
+    /*      And the same thing for q2 */
 
-/*      q2 = [ (expin mod q) ^ eq ] mod q               */
-    mp_mod(temp, expin, q);	/* temp = expin mod q  */
+    /*      q2 = [ (expin mod q) ^ eq ] mod q               */
+    mp_mod(temp, expin, q); /* temp = expin mod q  */
     status = mp_modexp(q2, temp, eq, q);
-    if (status < 0) {		/* mp_modexp returned an error. */
-	mp_init(expout, 1);
-	return status;		/* error return */
+    if (status < 0) { /* mp_modexp returned an error. */
+        mp_init(expout, 1);
+        return status; /* error return */
     }
 /*      Now use the multiplicative inverse u to glue together the
    two halves.
@@ -1971,23 +1996,22 @@ int mp_modexp_crt(unitptr expout, unitptr expin,
  */
     if (mp_compare(expout, q2) != 0) {
 #endif
-	/*      Find q2-p2 mod q */
-	if (mp_sub(q2, expout))	/* if the result went negative */
-	    mp_add(q2, q);	/* add q to q2 */
+    /*      Find q2-p2 mod q */
+    if (mp_sub(q2, expout)) /* if the result went negative */
+        mp_add(q2, q);      /* add q to q2 */
 
-	/*      expout = p2 + ( p * [(q2*u) mod q] )    */
-	mp_mult(temp, q2, u);	/* q2*u  */
-	mp_mod(q2, temp, q);	/* (q2*u) mod q */
-	mp_mult(temp, p, q2);	/* p * [(q2*u) mod q] */
-	mp_add(expout, temp);	/* expout = p2 + p * [...] */
+    /*      expout = p2 + ( p * [(q2*u) mod q] )    */
+    mp_mult(temp, q2, u); /* q2*u  */
+    mp_mod(q2, temp, q);  /* (q2*u) mod q */
+    mp_mult(temp, p, q2); /* p * [(q2*u) mod q] */
+    mp_add(expout, temp); /* expout = p2 + p * [...] */
 #if 0
     }
 #endif
 
-    mp_burn(q2);		/* burn the evidence on the stack... */
+    mp_burn(q2); /* burn the evidence on the stack... */
     mp_burn(temp);
-    return 0;			/* normal return */
-}				/* mp_modexp_crt */
-
+    return 0; /* normal return */
+} /* mp_modexp_crt */
 
 /****************** end of MPI library ****************************/
