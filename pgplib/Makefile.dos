@@ -1,0 +1,41 @@
+# For Borland Turbo C++ 1.0
+#--------------------------
+CC              = tcc -I\tc\include -w-inl -w-eff -w-par
+CPLUS           = $(CC) -P
+CFLAGS		= -ml -G -O -d -Z -DNEEDSWAP -DIDEA32 -DUNIT32
+LIB		= libpgp.lib
+OBJS		= libpgp.obj mpilib.obj idea.obj md5.obj randpool.obj mpiio.obj rsaglue1.obj
+
+$(LIB): $(OBJS)
+	if exist $(LIB) del $(LIB)
+	tlib $(LIB)/C +libpgp+mpilib+idea+md5+randpool+mpiio+rsaglue1, libpgp.lst
+
+test:	crypto.exe
+
+clean:
+	if exist *.obj del *.obj
+	if exist *.exe del *.exe
+	if exist *.bak del *.bak
+	if exist *.lib del *.lib
+	if exist *.lst del *.lst
+	if exist *.map del *.map
+
+.c.obj:
+	$(CC) $(CFLAGS) -c $<
+
+crypto.exe: crypto.obj $(LIB)
+	$(CC) $(CFLAGS) crypto.obj $(LIB)
+
+rename:
+	-mv makefile Makefile.dos
+	-mv makefile.unx Makefile
+
+crypto.o: crypto.c mpilib.h usuals.h mpiio.h idea.h md5.h
+idea.o: idea.c idea.h usuals.h randpool.h
+libnul.o: libnul.c pgplib.h
+libpgp.o: libpgp.c mpilib.h usuals.h mpiio.h idea.h md5.h pgplib.h randpool.h
+md5.o: md5.c md5.h
+mpiio.o: mpiio.c mpilib.h usuals.h mpiio.h
+mpilib.o: mpilib.c mpilib.h usuals.h
+randpool.o: randpool.c randpool.h usuals.h md5.h
+rsaglue1.o: rsaglue1.c mpilib.h usuals.h mpiio.h

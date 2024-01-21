@@ -1,0 +1,503 @@
+Учетная система DEAS - Python-интерфейс
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Copyright (C) 1996 КБ Кроникс
+
+Данный документ описывает реализацию
+библиотеки доступа к учетной системе DEAS
+из языка Python.
+
+Доступ к системе DEAS реализован в виде модуля "deas"
+языка Python.
+
+В операционной системе FreeBSD модуль deas является динамически
+загружаемым (файл deasmodule.so).  Для установки модуля в систему
+не требуется изменение основного Python-интерпретатора.
+
+Функции модуля "deas"
+~~~~~~~~~~~~~~~~~~~~~
+deas.register (logname, password, hostname, portnum)
+	Регистрация в базе DEAS.  Этот вызов должен выполняться
+	первым при инициализации. Все параметры необязательные.
+
+	logname  - регистрационное имя пользователя, по умолчанию
+		   используется имя пользователя в системе Unix
+	password - пароль пользователя, если не указан, то используется
+		   значение переменной среды DEASPASS, либо запрашивается
+		   с терминала пользователя
+	hostname - имя или IP-номер сервера базы, по умолчанию
+		   используется значение переменной среды DEASHOST,
+		   или имя локальной системы (localhost)
+	portnum  - номер TCP-порта сервера, по умолчанию 4726
+
+oldflag = deas.delflag (flag)
+	Установка режима просмотра удаленных счетов/проводок.
+	По умолчанию удаленные записи не выдаются.
+
+olddate = deas.date (newdate)
+	Установка текущей даты в сутках от 1 января 1990 года.
+	Проводки, соответствующие более поздним датам, не выдаются
+	и не учитываются в подсчете баланса счетов.
+
+(acn, pacn, passive, anal, descr, deleted, rmask, wmask) = deas.chart_first ()
+(acn, pacn, passive, anal, descr, deleted, rmask, wmask) = deas.chart_next ()
+	Выдача информации о счетах - первый счет / следующий счет.
+	Если счетов в базе нет, выдается пустое значение.
+
+	acn     - номер счета (целое число), спереди приписывается единица
+	pacn    - для субсчета - номер синтетического (родительского) счета,
+		  или 0
+	passive - признак пассивного счета (целое число)
+	anal    - признак аналитического счета (целое число)
+	descr   - описание счета (строка)
+	deleted - признак удаленного счета (целое число)
+	rmask   - маска групп доступа по чтению
+	wmask   - маска групп доступа по записи
+
+(acn, pacn, passive, anal, descr, deleted, rmask, wmask) = deas.chart_info (acn)
+	Выдача информации о счете с указанным номером.
+	Если такого счета нет, выдается пустое значение.
+
+	acn     - номер счета (целое число), спереди приписывается единица
+	pacn    - для субсчета - номер синтетического (родительского) счета,
+		  или 0
+	passive - признак пассивного счета (целое число)
+	anal    - признак аналитического счета (целое число)
+	descr   - описание счета (строка)
+	deleted - признак удаленного счета (целое число)
+	rmask   - маска групп доступа по чтению
+	wmask   - маска групп доступа по записи
+
+deas.chart_add (acn, pacn, passive, anal, descr, deleted, rmask, wmask)
+	Создание нового счета.
+	Создавать основные (корневые) счета может только
+	администратор (группа 0).
+	При создании субсчета пользователь должен иметь право записи в
+	родительский счет.
+	Если счет с таким номером уже существует, операция игнорируется.
+
+	acn     - номер счета (целое число), спереди приписывается единица
+	pacn    - для субсчета - номер синтетического (родительского) счета,
+		  или 0
+	passive - признак пассивного счета (целое число)
+	anal    - признак аналитического счета (целое число)
+	descr   - описание счета (строка)
+	deleted - признак удаленного счета (целое число)
+	rmask   - маска групп доступа по чтению, к ней будет добавлена
+		  маска групп пользователя
+	wmask   - маска групп доступа по записи, к ней будет добавлена
+		  маска групп пользователя
+
+deas.chart_edit (acn, pacn, passive, anal, descr, deleted, rmask, wmask)
+	Изменение параметров счета.
+	Изменять права доступа может только администратор (группа 0).
+
+	acn     - номер счета (целое число), спереди приписывается единица
+	pacn    - игнорируется
+	passive - игнорируется
+	anal    - игнорируется
+	descr   - описание счета (строка)
+	deleted - игнорируется
+	rmask   - маска групп доступа по чтению
+	wmask   - маска групп доступа по записи
+
+deas.chart_delete (acn)
+	Удаление указанного счета.
+	Удалять основные (корневые) счета может только
+	администратор (группа 0).
+	Для удаления субсчета пользователь должен иметь право записи в
+	родительский счет.
+
+(eid, date, debit, credit, (rub, doll, pcs, rec), descr, deleted,
+    rmask, user) = deas.account_first (acn)
+(eid, date, debit, credit, (rub, doll, pcs, rec), descr, deleted,
+    rmask, user) = deas.account_next ()
+	Выдача информации о проводках указанного счета -
+	первая проводка / следующая проводка.
+	Если проводок нет, выдается пустое значение.
+
+	eid     - номер проводки (целое число)
+	date    - дата проводки (дни от 1 января 1990)
+	debit   - номер дебетуемого счета
+	credit  - номер кредитуемого счета
+	rub     - сумма в рублях
+	doll    - сумма в долларах
+	pcs     - количество в штуках (для аналитических счетов)
+	rec     - количество проводок (равно 1)
+	descr   - комментарий к проводке (строка)
+	deleted - признак удаленной проводки (целое число)
+	rmask   - маска групп доступа по чтению
+	user    - имя пользователя, вводившего проводку (строка)
+
+((drub, ddoll, dpcs, drec), (crub, cdoll, cpcs, crec)) =
+    deas.account_balance (acn)
+	Подсчет баланса указанного счета.
+
+	drub  - сумма дебета в рублях
+	ddoll - сумма дебета в долларах
+	dpcs  - количество дебета в штуках (для аналитических счетов)
+	drec  - количество проводок по дебету
+	crub  - сумма кредита в рублях
+	cdoll - сумма кредита в долларах
+	cpcs  - количество кредита в штуках (для аналитических счетов)
+	crec  - количество проводок по кредиту
+
+list = deas.account_report (acn)
+	Подсчет помесячного баланса указанного счета.
+
+	list - список из 12 элементов, по одному для каждого месяца
+	       текущего года, каждый элемент представляет собой запись
+	       вида ((drub, ddoll, dpcs, drec), (crub, cdoll, cpcs, crec))
+
+	drub  - сумма дебета в рублях
+	ddoll - сумма дебета в долларах
+	dpcs  - количество дебета в штуках (для аналитических счетов)
+	drec  - количество проводок по дебету
+	crub  - сумма кредита в рублях
+	cdoll - сумма кредита в долларах
+	cpcs  - количество кредита в штуках (для аналитических счетов)
+	crec  - количество проводок по кредиту
+
+(eid, date, debit, credit, (rub, doll, pcs, rec), descr, deleted, rmask, user) =
+    deas.journal_first ()
+(eid, date, debit, credit, (rub, doll, pcs, rec), descr, deleted, rmask, user) =
+    deas.journal_next ()
+	Выдача информации о проводках - первая проводка / следующая проводка.
+	Если проводок нет, выдается пустое значение.
+
+	eid     - номер проводки (целое число)
+	date    - дата проводки (дни от 1 января 1990)
+	debit   - номер дебетуемого счета
+	credit  - номер кредитуемого счета
+	rub     - сумма в рублях
+	doll    - сумма в долларах
+	pcs     - количество в штуках (для аналитических счетов)
+	rec     - количество проводок (равно 1)
+	descr   - комментарий к проводке (строка)
+	deleted - признак удаленной проводки (целое число)
+	rmask   - маска групп доступа по чтению
+	user    - имя пользователя, вводившего проводку (строка)
+
+(eid, date, debit, credit, (rub, doll, pcs, rec), descr, deleted, rmask, user) =
+    deas.journal_info (eid)
+	Выдача информации об указанной проводке.
+
+	eid     - номер проводки (целое число)
+	date    - дата проводки (дни от 1 января 1990)
+	debit   - номер дебетуемого счета
+	credit  - номер кредитуемого счета
+	rub     - сумма в рублях
+	doll    - сумма в долларах
+	pcs     - количество в штуках (для аналитических счетов)
+	rec     - количество проводок (равно 1)
+	descr   - комментарий к проводке (строка)
+	deleted - признак удаленной проводки (целое число)
+	rmask   - маска групп доступа по чтению
+	user    - имя пользователя, вводившего проводку (строка)
+
+deas.journal_add (eid, date, debit, credit, (rub, doll, pcs, rec),
+    descr, deleted, rmask, user)
+	Введение новой проводки.
+	Пользователь должен иметь право записи в
+	дебетуемый и кредитуемый счета.
+
+	eid     - равно 0 или следующему свободному номеру проводки
+	date    - дата проводки (дни от 1 января 1990), или 0 если
+		  используется текущая дата
+	debit   - номер дебетуемого счета
+	credit  - номер кредитуемого счета
+	rub     - сумма в рублях
+	doll    - сумма в долларах
+	pcs     - количество в штуках (для аналитических счетов)
+	rec     - игнорируется
+	descr   - комментарий к проводке (строка)
+	deleted - признак удаленной проводки (целое число)
+	rmask   - игнорируется
+	user    - игнорируется
+
+deas.journal_edit (eid, date, debit, credit, (rub, doll, pcs, rec),
+    descr, deleted, rmask, user)
+	Изменение параметров проводки.
+	Пользователь должен иметь право записи в
+	новые и старые дебетуемый и кредитуемый счета.
+
+	eid     - номер проводки (целое число)
+	date    - дата проводки (дни от 1 января 1990)
+	debit   - номер дебетуемого счета
+	credit  - номер кредитуемого счета
+	rub     - сумма в рублях
+	doll    - сумма в долларах
+	pcs     - количество в штуках (для аналитических счетов)
+	rec     - игнорируется
+	descr   - комментарий к проводке (строка)
+	deleted - игнорируется (считается равным 0)
+	rmask   - игнорируется
+	user    - имя пользователя, вводившего проводку (строка),
+		  это поле может устанавливать только администратор
+
+deas.journal_delete (acn)
+	Удаление указанной проводки.
+	Пользователь должен иметь право записи в
+	дебетуемый и кредитуемый счета.
+
+(logname, user, descr, gmask) = deas.user_first ()
+(logname, user, descr, gmask) = deas.user_next ()
+	Выдача информации о пользавателях - первый / следующий.
+	Работает только для администратора.
+	Если пользователей больше нет, выдается пустое значение.
+
+	logname - регистрационное имя пользователя
+	user    - идентификатор пользователя
+	descr   - комментарий
+	gmask   - маска групп доступа
+
+(debit, credit, currency, line, descr) = deas.menu_first ()
+(debit, credit, currency, line, descr) = deas.menu_next ()
+	Загрузка меню типовых проводок - первый / следующий.
+	Если проводок больше нет, выдается пустое значение.
+
+	debit    - номер дебетуемого счета, для узла меню равно 0
+	credit   - номер кредитуемого счета, для узла меню равно 0
+	currency - тип валюты, 1 - рубли, 2 - доллары, 0 - любая валюта
+	line     - строка меню
+	descr    - заготовка комментария проводки
+
+date = deas.ymd_to_date (year, month, day)
+(year, month, day) = deas.date_to_ymd (date)
+	Преобразование даты в год, месяц и число, а также обратно.
+
+	date  - дата (дни от 1 января 1990)
+	year  - год, от 1990
+	month - месяц, от 1 до 12
+	day   - день, от 1 до 31
+
+Пример 1: Сброс всех данных базы в текстовом виде
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import deas, time, string
+from posix import environ
+
+#
+# Функция преобразования номера счета в строку с отбрасыванием ведущей цифры
+#
+def cvt (val):
+	str = "%d" % val
+	return str[1:]
+
+#
+# Функция преобразования маски доступа в текстовую шкалу
+#
+def cvtmask (val):
+	list = []
+	i = 0
+	while i<32 and val:
+		if val & 1: list.append (chr (ord ('0') + i%10))
+		else:       list.append ('-')
+		val = val >> 1
+		i = i+1
+	list.append ('-')
+	return string.joinfields (list, "")
+
+#
+# Функция преобразования даты в гг.мм.дд
+#
+def cvtdate (date):
+	(y, m, d) = deas.date_to_ymd (date)
+	return "%02d.%02d.%02d" % (y % 100, m, d)
+
+#
+# Определяем имя сервера, имя пользователя, порт
+#
+try:    user = environ["USER"]
+except: user = environ["LOGNAME"]
+
+try:    host = environ["DEASHOST"]
+except: host = "localhost"
+
+pass = ""
+port = 0
+
+#
+# Печатаем заголовок файла
+#
+print "# Сброс базы:",
+if port:
+	print "%s:%d" % (host, port)
+else:
+	print host
+print "# Дата:", time.ctime (time.time ())
+print "# Исполнитель:", user
+print ""
+
+#
+# Открываем базу
+#
+deas.register (user, pass, host, port)
+deas.delflag (1)        # Удаленные счета/проводки тоже нужны
+deas.date (99999)       # Ставим дату на 300 лет вперед
+
+#
+# Сохраняем план счетов
+#
+c = deas.chart_first ()
+while c:
+	(acn, pacn, passive, anal, descr, deleted, rmask, wmask) = c
+	if pacn: print "sub",
+	else:    print "acc",
+	print cvt (acn),
+	if pacn: print cvt (pacn),
+	print "\"%s\"" % descr, cvtmask (rmask), cvtmask (wmask),
+	if passive: print "passive",
+	if anal:    print "anal",
+	if deleted: print "deleted",
+	print ""
+	c = deas.chart_next ()
+
+print ""
+
+#
+# Выдаем все проводки
+#
+c = deas.journal_first ()
+while c:
+	(eid, date, debit, credit, amount, descr, deleted, rmask, user) = c
+	(rub, doll, pcs, rec) = amount
+	print "ent", eid, cvtdate (date), cvt (debit), cvt (credit),
+	if rub: print rub,
+	else:   print "$%d" % doll,
+	if pcs: print pcs,
+	print "\"%s\"" % user, "\"%s\"" % descr,
+	if deleted: print "deleted",
+	print ""
+	c = deas.journal_next ()
+
+print ""
+print "# Все."
+
+Пример 2: Загрузка данных в базу
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import deas, sys, string
+
+#
+# Функция преобразования текстовой шкалы в маску доступа
+#
+def getmode (str):
+	gmask = 1
+	for i in range (len(str)):
+		if str[i] in string.digits:
+			gmask = gmask | 1 << i
+	return gmask
+
+#
+# Функция преобразования гг.мм.дд в дату
+#
+def getdate (str):
+	list = string.splitfields (str, '.')
+	return deas.ymd_to_date (string.atoi (list[0]), string.atoi (list[1]),
+		string.atoi (list[2]))
+
+deas.register ()
+
+print "Loading",
+naccounts = nentries = 0
+while 1:
+	line = sys.stdin.readline ()
+	if not line: break
+	if line[0] == '\n' or line[0] == '#': continue
+	list = string.split (line)
+
+	if list[0] == "acc" or list[0] == "sub":
+		type = list[0]
+		del list[0]
+		acn = string.atoi ('1' + list[0])
+		del list[0]
+
+		pacn = 0
+		if type == "sub":
+			pacn = string.atoi ('1' + list[0])
+			del list[0]
+
+		last = list[0]
+		del list[0]
+		descr = [last]
+		while len(list)>0 and last[len(last)-1] != '"':
+			last = list[0]
+			del list[0]
+			descr.append (last)
+		descr = string.join (descr)
+		descr = descr[1:-1]
+
+		rmode = getmode (list[0])
+		del list[0]
+		wmode = getmode (list[0])
+		del list[0]
+
+		deleted = passive = anal = 0
+		while len(list) > 0:
+			if list[0] == "passive":   passive = 1
+			elif list[0] == "anal":    anal = 1
+			elif list[0] == "deleted": deleted = 1
+			else:
+				print "Invalid flag:", list[0]
+			del list[0]
+
+		deas.chart_add (acn, pacn, passive, anal, descr, deleted,
+			rmode, wmode)
+		naccounts = naccounts + 1
+		sys.stdout.write (".")
+		sys.stdout.flush ()
+
+	elif list[0] == "ent":
+		del list[0]
+		eid = string.atoi (list[0])
+		del list[0]
+		date = getdate (list[0])
+		del list[0]
+		debit = string.atoi ('1' + list[0])
+		del list[0]
+		credit = string.atoi ('1' + list[0])
+		del list[0]
+
+		rub = doll = 0
+		if list[0][0] == '$': doll = string.atoi (list[0][1:])
+		else:                 rub = string.atoi (list[0])
+		del list[0]
+
+		pcs = 0
+		if list[0][0] != '"':
+			pcs = string.atoi (list[0])
+			del list[0]
+
+		last = list[0]
+		del list[0]
+		user = [last]
+		while len(list)>0 and last[len(last)-1] != '"':
+			last = list[0]
+			del list[0]
+			user.append (last)
+		user = string.join (user)
+		user = user[1:-1]
+
+		last = list[0]
+		del list[0]
+		descr = [last]
+		while len(list)>0 and last[len(last)-1] != '"':
+			last = list[0]
+			del list[0]
+			descr.append (last)
+		descr = string.join (descr)
+		descr = descr[1:-1]
+
+		deleted = 0
+		if len(list) > 0 and list[0] == "deleted":
+			deleted = 1
+
+		deas.journal_add (eid, date, debit, credit, (rub, doll, pcs, 1),
+			descr, deleted, 0, user)
+		nentries = nentries + 1
+		sys.stdout.write ("-")
+		sys.stdout.flush ()
+
+	else:
+		print "Error:", line[0]
+
+print " done"
+print "Loaded %d accounts, %d entries" % (naccounts, nentries)

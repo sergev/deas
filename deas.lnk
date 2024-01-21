@@ -1,0 +1,11 @@
+main.obj 
+help.obj
+users.obj
+accounts.obj
+journal.obj
+entries.obj
+client.obj
+util.obj
+scrlib\libscr.lib
+pgplib\libpgp.lib
+watlib\wattcplg.lib
