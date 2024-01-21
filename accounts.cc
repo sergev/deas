@@ -18,13 +18,12 @@ extern int DialogDimColor;
 extern unsigned char DialogPalette[];
 extern clientinfo clnt;
 extern void Quit (void);
-extern void Hint (char *str);
+extern void Hint (const char *str);
 
 extern int NewJournalEntry (accountinfo *a);
 extern int EditJournalEntry (entryinfo *e);
 extern int CopyJournalEntry (entryinfo *e);
 extern int DeleteJournalEntry (entryinfo *e);
-extern void Hint (char *str);
 
 static accountinfo *acntab;
 static balance **total;
@@ -39,7 +38,7 @@ char *acnum (long acn)
 {
 	static char buf [40];
 
-	sprintf (buf, "%ld", acn);
+	snprintf (buf, sizeof(buf), "%ld", acn);
 	return buf+1;
 }
 
@@ -86,7 +85,7 @@ void LoadAccounts ()
 		++naccounts;
 		if (naccounts % 5 == 0) {
 			char buf[80];
-			sprintf (buf, "%d", naccounts);
+			snprintf (buf, sizeof(buf), "%d", naccounts);
 			Hint (buf);
 			V.Sync ();
 		}
@@ -96,7 +95,7 @@ void LoadAccounts ()
 	// Вычисляем наличие подсчетов.
 	memset (parentmask, 0, sizeof (parentmask));
 	accountinfo *b;
-	for (a=acntab; a<acntab+naccounts; ++a)
+	for (auto *a=acntab; a<acntab+naccounts; ++a)
 		for (b=acntab; b<acntab+naccounts; ++b)
 			if (a->acn == b->pacn) {
 				int i = a - acntab;
@@ -192,15 +191,17 @@ again:
 	scr->DrawFrame (y, x, h, w, color);
 	for (int n=0; n<w; ++n)
 		scr->AttrLow (y+h, x+n+1);
-	for (n=1; n<h; ++n)
+	for (int n=1; n<h; ++n)
 		scr->AttrLow (y+n, x+w);
 
 	int cline = 0;          // текущая строка (курсор)
 	int topline = 0;        // верхняя строка на экране
 	if (*a) {
-		for (accountinfo **p=list+nacc-1; p>list; --p)
+	        accountinfo **p;
+		for (p=list+nacc-1; p>list; --p) {
 			if (*p <= *a)
 				break;
+                }
 		cline = p - list;
 		if (cline >= plen) {
 			topline = cline - plen/2;
@@ -218,7 +219,7 @@ again:
 				continue;
 			accountinfo *p = list [topline+i];
 			char buf[80];
-			sprintf (buf, "%s%c %s", acnum (p->acn),
+			snprintf (buf, sizeof(buf), "%s%c %s", acnum (p->acn),
 				p->deleted ? '#' : IsParent (p) ?
 				'/' : ' ', p->descr);
 			scr->PutLimited (y+i+1, x+1, buf, w-2, color);
@@ -330,7 +331,7 @@ int ChooseAccount (Screen *scr, int y, int x, int w, long *v, char *str)
 	if (a) {
 		if (v)
 			*v = a->acn;
-		sprintf (str, "%s%c %s", acnum (a->acn),
+		snprintf (str, ENAMSZ, "%s%c %s", acnum (a->acn),
 			a->deleted ? '#' : IsParent (a) ?
 			'/' : ' ', a->descr);
 	}
@@ -354,7 +355,7 @@ int ChooseSubAccount (Screen *scr, int y, int x, int w, long *v, char *str)
 	if (a) {
 		if (v)
 			*v = a->acn;
-		sprintf (str, "%s%c %s", acnum (a->acn),
+		snprintf (str, ENAMSZ, "%s%c %s", acnum (a->acn),
 			a->deleted ? '#' : IsParent (a) ?
 			'/' : ' ', a->descr);
 	}
@@ -369,8 +370,8 @@ static int NewAccount (long pacn)
 
 	memset (&info, 0, sizeof (info));
 	if (a) {
-		sprintf (abuf, "%ld", pacn);
-		sprintf (pbuf, "%ld/ %.20s", a->acn, a->descr);
+		snprintf (abuf, sizeof(abuf), "%ld", pacn);
+		snprintf (pbuf, sizeof(pbuf), "%ld/ %.20s", a->acn, a->descr);
 		info.passive = a->passive;
 		info.anal = a->anal;
 		dlg = new Dialog (" Новый субсчет ", DialogPalette,
@@ -453,9 +454,9 @@ static int DeleteAccount (accountinfo *a)
 		return 0;
 
 	char buf [80], name [80];
-	sprintf (buf, "Удалить %s счет %s:", a->passive ? "пассивный" :
+	snprintf (buf, sizeof(buf), "Удалить %s счет %s:", a->passive ? "пассивный" :
 		"активный", acnum (a->acn));
-	sprintf (name, "\"%.50s\"?", a->descr);
+	snprintf (name, sizeof(name), "\"%.50s\"?", a->descr);
 
 	if (V.Popup (" Удаление счета ", buf, name, " Нет ", " Да ",
 	    0, DialogColor, DialogOptionColor) != 1)
@@ -501,19 +502,19 @@ static void PrintTotal (int y, accountinfo **list, int nacc)
 	dr_color = cr_color = dd_color = cd_color = TextColor;
 
 	if (a_rub < 0) a_rub = -a_rub, dr_color = TextNegColor;
-	sprintf (buf, a_rub ? "%ld" : "-", a_rub);
+	snprintf (buf, sizeof(buf), a_rub ? "%ld" : "-", a_rub);
 	V.Put (y, 46 - strlen (buf), buf, dr_color);
 
 	if (p_rub < 0) p_rub = -p_rub, cr_color = TextNegColor;
-	sprintf (buf, p_rub ? "%ld" : "-", p_rub);
+	snprintf (buf, sizeof(buf), p_rub ? "%ld" : "-", p_rub);
 	V.Put (y, 67 - strlen (buf), buf, cr_color);
 
 	if (a_doll < 0) a_doll = -a_doll, dd_color = TextNegColor;
-	sprintf (buf, a_doll ? "$%ld" : "-", a_doll);
+	snprintf (buf, sizeof(buf), a_doll ? "$%ld" : "-", a_doll);
 	V.Put (y, 56 - strlen (buf), buf, dd_color);
 
 	if (p_doll < 0) p_doll = -p_doll, cd_color = TextNegColor;
-	sprintf (buf, p_doll ? "$%ld" : "-", p_doll);
+	snprintf (buf, sizeof(buf), p_doll ? "$%ld" : "-", p_doll);
 	V.Put (y, 77 - strlen (buf), buf, cd_color);
 }
 
@@ -560,7 +561,7 @@ static void ViewLine (accountinfo **list, int lnum, int y)
 			V.Put ((a->rmask >> i) & 1 ?
 				"0123456789012345"[i] : '-', color);
 		V.Put ("  ", color);
-		for (i=0; i<GRMAX; ++i)
+		for (int i=0; i<GRMAX; ++i)
 			V.Put ((a->wmask >> i) & 1 ?
 				"0123456789012345"[i] : '-', color);
 		long rec = b->debit.rec + b->credit.rec;
@@ -582,16 +583,16 @@ static void ViewLine (accountinfo **list, int lnum, int y)
 		r_color = d_color = p_color = color;
 
 		if (v.rub < 0) v.rub = -v.rub, r_color ^= TextNegColor ^ TextColor;
-		sprintf (buf, v.rub ? "%ld" : "-", v.rub);
+		snprintf (buf, sizeof(buf), v.rub ? "%ld" : "-", v.rub);
 		V.Put (y, (a->passive ? 67 : 46) - strlen (buf), buf, r_color);
 
 		if (v.doll < 0) v.doll = -v.doll, d_color ^= TextNegColor ^ TextColor;
-		sprintf (buf, v.doll ? "$%ld" : "-", v.doll);
+		snprintf (buf, sizeof(buf), v.doll ? "$%ld" : "-", v.doll);
 		V.Put (y, (a->passive ? 77 : 56) - strlen (buf), buf, d_color);
 
 		if (a->anal) {
 			if (v.pcs < 0) v.pcs = -v.pcs, p_color ^= TextNegColor ^ TextColor;
-			sprintf (buf, v.pcs ? "%ld" : "-", v.pcs);
+			snprintf (buf, sizeof(buf), v.pcs ? "%ld" : "-", v.pcs);
 			V.Put (y, 35 - strlen (buf), buf, p_color);
 		}
 	}
@@ -600,7 +601,7 @@ static void ViewLine (accountinfo **list, int lnum, int y)
 static int ViewAccountList (long pacn)
 {
 	int nacc;
-	char *hint = "\1F4\2-Редактирование  \1F7\2-Новый счет  \1F8\2-Удаление";
+	const char *hint = "\1F4\2-Редактирование  \1F7\2-Новый счет  \1F8\2-Удаление";
 	accountinfo **list = AccountList (pacn, &nacc);
 
 	// Сохраняем экран.
@@ -613,7 +614,7 @@ static int ViewAccountList (long pacn)
 	V.DrawFrame (1, 0, V.Lines-2, V.Columns, BorderColor);
 	if (pacn) {
 		char buf [40];
-		sprintf (buf, " Субсчета %s ", acnum (pacn));
+		snprintf (buf, sizeof(buf), " Субсчета %s ", acnum (pacn));
 		V.Put (1, (V.Columns - strlen (buf)) / 2, buf, BorderColor);
 	}
 	V.HorLine (y-1, 1, V.Columns-2, BorderColor);
@@ -843,11 +844,11 @@ static void ViewEntryLine (int lnum, int y, accountinfo *a)
 
 	char buf[80];
 	if (e->amount.rub)
-		sprintf (buf, "  %ld", e->amount.rub);
+		snprintf (buf, sizeof(buf), "  %ld", e->amount.rub);
 	else
-		sprintf (buf, "  $%ld", e->amount.doll);
+		snprintf (buf, sizeof(buf), "  $%ld", e->amount.doll);
 	if (a->anal)
-		sprintf (buf + strlen(buf), " (%ld)", e->amount.pcs);
+		snprintf (buf + strlen(buf), sizeof(buf) - strlen(buf), " (%ld)", e->amount.pcs);
 	V.Put (y, c - strlen (buf), buf, color);
 }
 
@@ -867,19 +868,19 @@ static void PrintTotalAccount (int y, accountinfo *a)
 	dr_color = cr_color = dd_color = cd_color = TextColor;
 
 	if (b->debit.rub < 0) b->debit.rub = -b->debit.rub, dr_color = TextNegColor;
-	sprintf (buf, b->debit.rub ? "%ld" : "-", b->debit.rub);
+	snprintf (buf, strlen(buf), b->debit.rub ? "%ld" : "-", b->debit.rub);
 	V.Put (y, 60 - strlen (buf), buf, dr_color);
 
 	if (b->credit.rub < 0) b->credit.rub = -b->credit.rub, cr_color = TextNegColor;
-	sprintf (buf, b->credit.rub ? "%ld" : "-", b->credit.rub);
+	snprintf (buf, strlen(buf), b->credit.rub ? "%ld" : "-", b->credit.rub);
 	V.Put (y, 78 - strlen (buf), buf, cr_color);
 
 	if (b->debit.doll < 0) b->debit.doll = -b->debit.doll, dd_color = TextNegColor;
-	sprintf (buf, b->debit.doll ? "$%ld" : "-", b->debit.doll);
+	snprintf (buf, strlen(buf), b->debit.doll ? "$%ld" : "-", b->debit.doll);
 	V.Put (y+1, 60 - strlen (buf), buf, dd_color);
 
 	if (b->credit.doll < 0) b->credit.doll = -b->credit.doll, cd_color = TextNegColor;
-	sprintf (buf, b->credit.doll ? "$%ld" : "-", b->credit.doll);
+	snprintf (buf, strlen(buf), b->credit.doll ? "$%ld" : "-", b->credit.doll);
 	V.Put (y+1, 78 - strlen (buf), buf, cd_color);
 }
 
@@ -898,7 +899,7 @@ static int ViewAccount (accountinfo *a)
 	V.DrawFrame (1, 0, V.Lines-2, V.Columns, BorderColor);
 
 	char buf [80];
-	sprintf (buf, " %s %.50s ", acnum (a->acn), a->descr);
+	snprintf (buf, strlen(buf), " %s %.50s ", acnum (a->acn), a->descr);
 	V.Put (y-3, (V.Columns - strlen (buf)) / 2, buf, BorderColor);
 
 	V.HorLine (y-1, 1, V.Columns-2, BorderColor);

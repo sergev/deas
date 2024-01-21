@@ -15,3 +15,9 @@ void block_decrypt (void *from, void *to, int len, char *key);
 void crypt_init (char *key);
 int crypt_read (int fd, void *buf, int len);
 int crypt_write (int fd, void *buf, int len);
+
+int rsa_public_encrypt(unsigned char *outbuf, unsigned char *inbuf, short bytes, unsigned char *E, unsigned char *N);
+int rsa_private_decrypt(unsigned char *outbuf, unsigned char *inbuf, unsigned char *E, unsigned char *D, unsigned char *P, unsigned char *Q, unsigned char *U, unsigned char *N);
+
+int getpublickey (char *keyfile, long *file_position, char *userid, void *n, void *e);
+int getsecretkey (unsigned char *ideakey, char *keyfile, char *userid, void *n, void *e, void *d, void *p, void *q, void *u);

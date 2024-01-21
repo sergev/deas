@@ -232,13 +232,8 @@ void journal_delete (clientinfo *c, long eid);
 void date2ymd (long date, int *year, int *mon, int *day);
 long ymd2date (int year, int mon, int day);
 
-#ifdef unix
 int receive_packet (int sock, char *data, int len);
 void send_packet (int sock, char *data, short len);
-#else
-int receive_packet (void *sock, char *data, int len);
-void send_packet (void *sock, char *data, short len);
-#endif
 
 #ifdef __cplusplus
 };

@@ -6,8 +6,8 @@ extern int TextColor;
 extern int HelpColor;
 
 struct helptab {
-	char *item;
-	char *rinfo;
+	const char *item;
+	const char *rinfo;
 } helpTab [] = {
 { "usage",
 	"Вызов:\n"

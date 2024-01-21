@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef unix
-#   include <unistd.h>
-#endif
+#include <unistd.h>
 #include "deas.h"
 #include "pgplib.h"
+#include "mpilib.h"
+#include "md5.h"
 
-#define countbytes(r) ((countbits(r)+7)>>3)
+//#define countbytes(r) ((countbits(r)+7)>>3)
 
 char pn[KEYSZ], pe[KEYSZ];
 char sn[KEYSZ], se[KEYSZ];
@@ -56,7 +56,7 @@ void encode ()
 			perror ("input");
 		if (n <= 0)
 			break;
-		err = rsa_public_encrypt (outbuf, inbuf, n, pe, pn);
+		err = rsa_public_encrypt ((unsigned char*)outbuf, (unsigned char*)inbuf, n, (unsigned char*)pe, (unsigned char*)pn);
 		if (err) {
 			fprintf (stderr, "rsa_public_encrypt error %d\n", err);
 			break;
@@ -82,7 +82,7 @@ void decode ()
 			perror ("input");
 			break;
 		}
-		n = rsa_private_decrypt (outbuf, inbuf, se, sd, sp, sq, su, sn);
+		n = rsa_private_decrypt ((unsigned char*)outbuf, (unsigned char*)inbuf, (unsigned char*)se, (unsigned char*)sd, (unsigned char*)sp, (unsigned char*)sq, (unsigned char*)su, (unsigned char*)sn);
 		if (n <= 0) {
 			fprintf (stderr, "rsa_private_decrypt error %d\n", n);
 			break;
@@ -117,42 +117,6 @@ void cryptfile (char *key, int decodeflag)
 	}
 }
 
-#ifndef unix
-char *getpass (char *prompt)
-{
-	static char buf[80];
-	char *p = buf;
-
-	cputs (prompt);
-	for (;;) {
-		*p = getch ();
-		switch (*p) {
-		case 0:
-			continue;
-		case '\b':
-			if (p > buf) {
-				--p;
-				putch ('\b');
-				putch (' ');
-				putch ('\b');
-			}
-			continue;
-		case '\n':
-		case '\r':
-ret:                	*p = 0;
-			putch ('\r');
-			putch ('\n');
-			return buf;
-		default:
-			++p;
-			putch ('*');
-			if (p >= buf + sizeof(buf) - 1)
-				goto ret;
-		}
-	}
-}
-#endif
-
 int main (int argc, char **argv)
 {
 	char userid[KEYSZ], passwd[16], *id;
@@ -182,7 +146,7 @@ int main (int argc, char **argv)
 			showsecflag = 0;
 			continue;
 		case 'E':
-			++encodeflag;
+			++encodeflag; // TODO
 			showkeyflag = 0;
 			showsecflag = 0;
 			continue;
@@ -216,8 +180,7 @@ usage:                  fprintf (stderr, "Usage:\n");
 	}
 
 	id = argv[0];
-#ifdef unix
-	{
+
 	static char filename[128], *p;
 	p = getenv ("HOME");
 	if (! p)
@@ -225,10 +188,6 @@ usage:                  fprintf (stderr, "Usage:\n");
 	strcpy (filename, p);
 	strcat (filename, "/.deasdat");
 	crypt_pubfile = crypt_secfile = filename;
-	}
-#else
-	crypt_pubfile = crypt_secfile = "deas.dat";
-#endif
 
 	if (! decodeflag && ! showsecflag) {
 		strcpy (userid, id);
@@ -245,17 +204,17 @@ usage:                  fprintf (stderr, "Usage:\n");
 	}
 	if (showsecflag || decodeflag) {
 		/* Get password. */
-		char mdContext[100];
+		struct MD5Context mdContext;
 		char *pass = getpass ("Password: ");
 
 		/* Calculate the hash */
-		MD5Init(mdContext);
-		MD5Update(mdContext, pass, strlen (pass));
+		MD5Init(&mdContext);
+		MD5Update(&mdContext, (unsigned char*)pass, strlen (pass));
 		memset(pass, 0, strlen (pass));
-		MD5Final(passwd, mdContext);
+		MD5Final((unsigned char*)passwd, &mdContext);
 
 		strcpy (userid, id);
-		err = getsecretkey (passwd, crypt_secfile, userid, sn, se, sd, sp, sq, su);
+		err = getsecretkey ((unsigned char*)passwd, crypt_secfile, userid, sn, se, sd, sp, sq, su);
 		if (err < 0) {
 			fprintf (stderr, "getsecretkey error %d\n", err);
 			exit (1);

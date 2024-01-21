@@ -1,7 +1,7 @@
 SHELL   = /bin/sh
 LD      = g++ -g
-SRCS    = Screen.cc Tty.cc Key.cc Box.cc Popup.cc Dialog.cc Menu.cc curses.c ctype.c Termgoto.cc $(CAPSRC)
-OBJS    = Screen.o  Tty.o  Key.o  Box.o  Popup.o  Dialog.o  Menu.o  curses.o ctype.o Termgoto.o  $(CAPOBJ)
+SRCS    = Screen.cc Tty.cc Key.cc Box.cc Popup.cc Dialog.cc Menu.cc curses.c Termgoto.cc $(CAPSRC)
+OBJS    = Screen.o  Tty.o  Key.o  Box.o  Popup.o  Dialog.o  Menu.o  curses.o Termgoto.o  $(CAPOBJ)
 CAPSRC  = Termcap.cc
 CAPOBJ  = Termcap.o
 LIB     = libscr.a
@@ -75,7 +75,6 @@ install: $(LIB)
 	chmod 444 /usr/local/lib/$(LIB)
 	install -c -m 444 Screen.h /usr/local/include/Screen.h
 	install -c -m 444 curses.h /usr/local/include/curses.h
-	install -c -m 444 ctype.h /usr/local/include/ctype.h
 
 dos:
 	rm -rf scrdos scrdos.zip
@@ -92,7 +91,6 @@ dos:
 	$(CPLUS) $(CFLAGS) -c $<
 
 ###
-ctype.o: ctype.c ctype.h
 hellcurs.o: hellcurs.c curses.h
 Box.o: Box.cc Screen.h extern.h
 Dialog.o: Dialog.cc extern.h Screen.h Dialog.h

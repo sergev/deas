@@ -33,8 +33,8 @@ public:
 		{ return next==list ? 0 : next; }
 	static DialogElement *Home ();
 	static DialogElement *End ();
-	static char *GetString (char **p);
-	static long GetNumber (char **p);
+	static const char *GetString (const char **p);
+	static long GetNumber (const char **p);
 };
 
 class DialogGroup : public DialogElement {
@@ -44,7 +44,7 @@ class DialogGroup : public DialogElement {
 public:
 	int frameflag;
 
-	DialogGroup (int row, int col, char **fmt, void ***arg,
+	DialogGroup (int row, int col, const char **fmt, void ***arg,
 		int flags=0, DialogGroup *prnt=0);
 	~DialogGroup ();
 	void Add (DialogElement *v);
@@ -53,9 +53,9 @@ public:
 };
 
 class DialogLabel : public DialogElement {
-	char *label;
+	const char *label;
 public:
-	DialogLabel (int row, int col, char **p);
+	DialogLabel (int row, int col, const char **p);
 	~DialogLabel () { if (label) delete label; }
 	void Draw ();
 };
@@ -70,10 +70,10 @@ public:
 };
 
 class DialogButton : public DialogElement {
-	char *label;
+	const char *label;
 	int *val;
 public:
-	DialogButton (int row, int col, char **p, int *v);
+	DialogButton (int row, int col, const char **p, int *v);
 	~DialogButton () { if (label) delete label; }
 	void Draw ();
 	int Run ();
@@ -82,9 +82,9 @@ public:
 class DialogRadioButton : public DialogElement {
 	int *val;
 	int setval;
-	char *label;
+	const char *label;
 public:
-	DialogRadioButton (int row, int col, char **p, int *v);
+	DialogRadioButton (int row, int col, const char **p, int *v);
 	~DialogRadioButton () { if (label) delete label; }
 	void Draw ();
 	void Redraw ();
@@ -97,7 +97,7 @@ class DialogList : public DialogElement {
 	int maxw;
 	int (*func) (Screen *scr, int y, int x, int w, long *v, char *str);
 public:
-	DialogList (int row, int col, char **p, long *v, int (*)(...));
+	DialogList (int row, int col, const char **p, long *v, int (*)(...));
 	void Draw ();
 	int Run ();
 };
@@ -106,7 +106,7 @@ class DialogString : public DialogElement {
 	char *val;
 	int maxlen;
 public:
-	DialogString (int row, int col, char **p, char *v);
+	DialogString (int row, int col, const char **p, char *v);
 	void Draw ();
 	int Run ();
 };
@@ -114,7 +114,7 @@ public:
 class DialogTitle : public DialogElement {
 	char *val;
 public:
-	DialogTitle (int row, int col, char **p, char *v);
+	DialogTitle (int row, int col, const char **p, char *v);
 	void Draw ();
 };
 
@@ -122,7 +122,7 @@ class DialogPassword : public DialogElement {
 	char *val;
 	int maxlen;
 public:
-	DialogPassword (int row, int col, char **p, char *v);
+	DialogPassword (int row, int col, const char **p, char *v);
 	void Draw ();
 	int Run ();
 };
@@ -131,7 +131,7 @@ class DialogNumber : public DialogElement {
 	long *val;
 	long min, max, step;
 public:
-	DialogNumber (int row, int col, char **p, long *v);
+	DialogNumber (int row, int col, const char **p, long *v);
 	void Draw ();
 	int Run ();
 };
@@ -139,29 +139,29 @@ public:
 class DialogMask : public DialogElement {
 	long *val;
 public:
-	DialogMask (int row, int col, char **p, long *v);
+	DialogMask (int row, int col, const char **p, long *v);
 	void Draw ();
 	int Run ();
 };
 
 class DialogCommand : public DialogElement {
-	char *label;
+	const char *label;
 	int val;
 public:
-	DialogCommand (int row, int col, char **p);
+	DialogCommand (int row, int col, const char **p);
 	~DialogCommand () { if (label) delete label; }
 	void Draw ();
 	int Run ();
 };
 
 class Dialog {
-	char *title;
+	const char *title;
 	unsigned char *palette;
 	int r, c;
 	DialogGroup *grp;
 	DialogElement *list;
 public:
-	Dialog (char *t, unsigned char *pal, char *fmt, ...);
+	Dialog (const char *t, unsigned char *pal, const char *fmt, ...);
 	~Dialog () { if (grp) delete grp; }
 	int Run (Screen *scr);
 };

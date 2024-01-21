@@ -10,10 +10,10 @@ The Netherlands.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Stichting Mathematisch
 Centrum or CWI not be used in advertising or publicity pertaining to
 distribution of the software without specific, written prior permission.
@@ -29,25 +29,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Module support interface */
-
-#ifdef HAVE_STDARG_PROTOTYPES
-
 #include <stdarg.h>
 
 extern int PyArg_Parse Py_PROTO((PyObject *, char *, ...));
 extern int PyArg_ParseTuple Py_PROTO((PyObject *, char *, ...));
 extern PyObject *Py_BuildValue Py_PROTO((char *, ...));
-
-#else
-
-#include <varargs.h>
-
-/* Better to have no prototypes at all for varargs functions in this case */
-extern int PyArg_Parse();
-extern int PyArg_ParseTuple();
-extern PyObject *Py_BuildValue();
-
-#endif
 
 extern int PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
 extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));

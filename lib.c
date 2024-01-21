@@ -3,6 +3,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <time.h>
 #include <sys/stat.h>
 #include "deas.h"
 #include "pgplib.h"
@@ -228,8 +229,8 @@ static int ccompare (account_t *a, account_t *b)
 {
 	char acn[64], bcn[64];
 
-	sprintf (acn, "%ld", a->info.acn);
-	sprintf (bcn, "%ld", b->info.acn);
+	snprintf (acn, sizeof(acn), "%ld", a->info.acn);
+	snprintf (bcn, sizeof(bcn), "%ld", b->info.acn);
 	return strcmp (acn, bcn);
 }
 
@@ -339,12 +340,13 @@ static int uinit ()
 			if (! ptr)
 				goto failed;
 			ptr = getstring (m->descr, sizeof (m->descr), ptr);
-			if (ptr && getstring (buf, sizeof (buf), ptr))
+			if (ptr && getstring (buf, sizeof (buf), ptr)) {
 				if (*buf == '$')
 					m->currency = 2;
-				else if (*buf == 'р' || *buf == 'Р' ||
+				else if (//TODO utf-8: *buf == 'р' || *buf == 'Р' ||
 				    *buf == 'r' || *buf == 'R')
 					m->currency = 1;
+                        }
 		} else {
 failed:                 fclose (fd);
 			return 0;

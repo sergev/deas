@@ -130,7 +130,7 @@ private:
 	void clearScreen ();
 	const char *skipDelay (const char *str);
 	void scroolScreen ();
-	void initChoice (int row, int col, char *c1, char *c2, char *c3);
+	void initChoice (int row, int col, const char *c1, const char *c2, const char *c3);
 	int menuChoice (int c, int i);
 	char *editString (int r, int c, int w, char *str, int cp, int color);
 	int inputKey (struct Keytab *kp);
@@ -228,12 +228,12 @@ public:
 	void DelLine (int line, int attr=0);
 	void InsLine (int line, int attr=0);
 
-	void Error (int c, int i, char *head, char *reply, char *s, ...);
-	int Popup (char *head, char *mesg, char *mesg2,
-		char *c1, char *c2, char *c3, int c, int i);
+	void Error (int c, int i, const char *head, const char *reply, const char *s, ...);
+	int Popup (const char *head, const char *mesg, const char *mesg2,
+		const char *c1, const char *c2, const char *c3, int c, int i);
 	char *GetString (int w, char *str, char *head, char *mesg,
 		int c, int i);
-	void PopupString (char *title, const char *str, char *reply,
+	void PopupString (const char *title, const char *str, const char *reply,
 		int color, int inverse);
 	int SelectFromList (int color, int inverse, char *head, char *mesg,
 		int cnt, ...);

@@ -78,7 +78,7 @@ account_reply *chart_info_1 (long *acn, clientinfo *clnt)
 
 void *chart_add_1 (accountinfo *i, clientinfo *clnt)
 {
-	syslog (LOG_NOTICE, "%s - add chart #%d (%s)", clnt->u->info.logname,
+	syslog (LOG_NOTICE, "%s - add chart #%ld (%s)", clnt->u->info.logname,
 		i->acn, i->descr);
 	chart_add (clnt, i);
 	return OK;
@@ -86,7 +86,7 @@ void *chart_add_1 (accountinfo *i, clientinfo *clnt)
 
 void *chart_edit_1 (accountinfo *i, clientinfo *clnt)
 {
-	syslog (LOG_NOTICE, "%s - edit chart #%d (%s)", clnt->u->info.logname,
+	syslog (LOG_NOTICE, "%s - edit chart #%ld (%s)", clnt->u->info.logname,
 		i->acn, i->descr);
 	chart_edit (clnt, i);
 	return OK;
@@ -94,7 +94,7 @@ void *chart_edit_1 (accountinfo *i, clientinfo *clnt)
 
 void *chart_delete_1 (long *acn, clientinfo *clnt)
 {
-	syslog (LOG_NOTICE, "%s - delete chart #%d", clnt->u->info.logname,
+	syslog (LOG_NOTICE, "%s - delete chart #%ld", clnt->u->info.logname,
 		*acn);
 	chart_delete (clnt, *acn);
 	return OK;
@@ -180,7 +180,7 @@ entry_reply *journal_info_1 (long *eid, clientinfo *clnt)
 
 void *journal_add_1 (entryinfo *e, clientinfo *clnt)
 {
-	syslog (LOG_NOTICE, "%s - add entry #%d/#%d (%s)", clnt->u->info.logname,
+	syslog (LOG_NOTICE, "%s - add entry #%ld/#%ld (%s)", clnt->u->info.logname,
 		e->debit, e->credit, e->descr);
 	journal_add (clnt, e);
 	return OK;
@@ -188,7 +188,7 @@ void *journal_add_1 (entryinfo *e, clientinfo *clnt)
 
 void *journal_edit_1 (entryinfo *e, clientinfo *clnt)
 {
-	syslog (LOG_NOTICE, "%s - edit entry #%d/#%d (%s)", clnt->u->info.logname,
+	syslog (LOG_NOTICE, "%s - edit entry #%ld/#%ld (%s)", clnt->u->info.logname,
 		e->debit, e->credit, e->descr);
 	journal_edit (clnt, e);
 	return OK;
@@ -196,7 +196,7 @@ void *journal_edit_1 (entryinfo *e, clientinfo *clnt)
 
 void *journal_delete_1 (long *eid, clientinfo *clnt)
 {
-	syslog (LOG_NOTICE, "%s - delete entry %d", clnt->u->info.logname,
+	syslog (LOG_NOTICE, "%s - delete entry %ld", clnt->u->info.logname,
 		*eid);
 	journal_delete (clnt, *eid);
 	return OK;

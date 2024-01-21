@@ -19,6 +19,6 @@ private:
 	Box *box;
 	Screen *scr;
 public:
-	Flash (Screen *s, char *head, char *msg, int color);
+	Flash (Screen *s, const char *head, const char *msg, int color);
 	~Flash ();
 };

@@ -17,7 +17,7 @@
 #include <stdarg.h>
 
 struct choice {
-	char *name;
+	const char *name;
 	int namlen;
 	int r, c;
 };
@@ -25,7 +25,7 @@ struct choice {
 static struct choice tab [3];
 static int cnum;
 
-void Screen::Error (int c, int i, char *head, char *reply, char *s, ...)
+void Screen::Error (int c, int i, const char *head, const char *reply, const char *s, ...)
 {
 	char buf [100];
 
@@ -36,8 +36,8 @@ void Screen::Error (int c, int i, char *head, char *reply, char *s, ...)
 	Popup (head, buf, 0, reply, 0, 0, c, i);
 }
 
-int Screen::Popup (char *head, char *mesg, char *mesg2,
-	char *c1, char *c2, char *c3, int color, int inverse)
+int Screen::Popup (const char *head, const char *mesg, const char *mesg2,
+	const char *c1, const char *c2, const char *c3, int color, int inverse)
 {
 	int len;
 	int w = strlen (mesg);
@@ -86,7 +86,7 @@ int Screen::Popup (char *head, char *mesg, char *mesg2,
 	return (ch);
 }
 
-void Screen::initChoice (int row, int col, char *c1, char *c2, char *c3)
+void Screen::initChoice (int row, int col, const char *c1, const char *c2, const char *c3)
 {
 	cnum = c2 ? (c3 ? 3 : 2) : 1;
 	tab[0].name = c1;
@@ -268,7 +268,7 @@ char *Screen::GetString (int w, char *str, char *head, char *mesg, int color, in
 
 // Отрисовка мультистроки в popup-окне с задержкой ввода.
 
-void Screen::PopupString (char *title, const char *str, char *reply, int color, int inverse)
+void Screen::PopupString (const char *title, const char *str, const char *reply, int color, int inverse)
 {
 	int w, h, r, c;
 
@@ -347,7 +347,7 @@ void Screen::PopupString (char *title, const char *str, char *reply, int color, 
 	}
 }
 
-Flash::Flash (Screen *s, char *head, char *mesg, int color)
+Flash::Flash (Screen *s, const char *head, const char *mesg, int color)
 {
 	scr = s;
 	int h = 5;

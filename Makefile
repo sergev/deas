@@ -1,5 +1,5 @@
 CFLAGS  = -O -g -Wall -Iscrlib -Ipgplib
-CXXFLAGS  = -O -g -Wall -Iscrlib -Ipgplib
+CXXFLAGS  = -std=c++20 -O -g -Wall -Iscrlib -Ipgplib
 CRFLAGS = $(CFLAGS) -fpic
 LDFLAGS = -g
 CRYPT   = pgplib/libpgp.a
@@ -12,16 +12,16 @@ LOBJS   = client.o util.o
 LROBJS  = client.ro util.ro
 PROG    = deas
 
-all:    l$(PROG) $(PROG) $(PROG)d $(PROG)ctl lib$(PROG).a lib$(PROG).ra python/$(PROG)module.so
+all:    l$(PROG) $(PROG) $(PROG)d $(PROG)ctl lib$(PROG).a lib$(PROG).ra #python/$(PROG)module.so
 
 l$(PROG): $(OBJS) $(LIBS)
-	$(CC) $(LDFLAGS) $(OBJS) -o l$(PROG) $(LIBS)
+	$(CXX) $(LDFLAGS) $(OBJS) -o l$(PROG) $(LIBS)
 
 $(PROG): $(ROBJS) $(LIBS)
-	$(CC) $(LDFLAGS) $(ROBJS) -o $(PROG) $(LIBS)
+	$(CXX) $(LDFLAGS) $(ROBJS) -o $(PROG) $(LIBS)
 
 $(PROG)d: $(DOBJS)
-	$(CC) $(LDFLAGS) $(DOBJS) -o $(PROG)d
+	$(CXX) $(LDFLAGS) $(DOBJS) -o $(PROG)d
 
 lib$(PROG).a: $(LOBJS)
 	[ "$?" != "" ] && ar r lib$(PROG).a $? && ranlib lib$(PROG).a
@@ -48,7 +48,7 @@ clean:
 	rm -f *.[oba] *.r[oa] z $(PROG) l$(PROG) r$(PROG) $(PROG)d $(PROG)ctl
 	cd scrlib && make clean
 	cd pgplib && make clean
-	cd python && make clean
+	#cd python && make clean
 
 depend:
 	mkdep $(CFLAGS) *.c *.cc &&\
@@ -68,9 +68,9 @@ python/$(PROG)module.so:
 	cd python && make
 
 install: /usr/local/etc/$(PROG)d /usr/local/bin/$(PROG) /usr/local/bin/l$(PROG)\
-	/usr/local/lib/python/$(PROG)module.so /usr/local/etc/$(PROG)ctl\
-	/usr/local/etc/chk$(PROG) /usr/local/bin/$(PROG)backup\
-	/usr/local/bin/$(PROG)restore
+	/usr/local/etc/$(PROG)ctl /usr/local/etc/chk$(PROG)
+	/usr/local/bin/$(PROG)backup /usr/local/bin/$(PROG)restore\
+	#/usr/local/lib/python/$(PROG)module.so
 
 /usr/local/bin/$(PROG): $(PROG)
 	install -c -s $(PROG) /usr/local/bin/$(PROG)
@@ -114,3 +114,14 @@ dos:
 	 zip -rm $(PROG)dos $(PROG)dos
 
 ###
+client.o: client.c deas.h pgplib/pgplib.h
+deasctl.o: deasctl.c deas.h pgplib/pgplib.h
+lib.o: lib.c deas.h pgplib/pgplib.h
+server.o: server.c deas.h pgplib/pgplib.h
+util.o: util.c deas.h
+accounts.o: accounts.cc scrlib/Screen.h scrlib/Dialog.h deas.h
+entries.o: entries.cc scrlib/Screen.h scrlib/Dialog.h deas.h
+help.o: help.cc scrlib/Screen.h
+journal.o: journal.cc scrlib/Screen.h scrlib/Dialog.h deas.h
+main.o: main.cc scrlib/Screen.h scrlib/Popup.h scrlib/Dialog.h deas.h
+users.o: users.cc scrlib/Screen.h deas.h

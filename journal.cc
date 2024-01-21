@@ -16,7 +16,7 @@ extern int DialogOptionColor;
 extern unsigned char DialogPalette[];
 extern clientinfo clnt;
 extern void Quit (void);
-extern void Hint (char *str);
+extern void Hint (const char *str);
 extern char *acnum (long acn);
 extern int ChooseAccount (Screen *scr, int y, int x, int w, long *v, char *str);
 extern int IsParent (accountinfo *a);
@@ -220,8 +220,8 @@ int DeleteJournalEntry (entryinfo *e)
 		return 0;
 
 	char buf [80], name [80];
-	sprintf (buf, "Удалить проводку #%ld:", e->eid);
-	sprintf (name, "\"%.50s\"?", e->descr);
+	snprintf (buf, sizeof(buf), "Удалить проводку #%ld:", e->eid);
+	snprintf (name, sizeof(name), "\"%.50s\"?", e->descr);
 
 	if (V.Popup (" Удаление проводки ", buf, name, " Нет ", " Да ",
 	    0, DialogColor, DialogOptionColor) != 1)
@@ -264,14 +264,14 @@ static void ViewJournalLine (int lnum, int y)
 
 	char buf[80];
 	if (e->amount.rub && e->amount.doll)
-		sprintf (buf, " %ld+$%ld", e->amount.rub, e->amount.doll);
+		snprintf (buf, sizeof(buf), " %ld+$%ld", e->amount.rub, e->amount.doll);
 	else if (e->amount.rub)
-		sprintf (buf, " %ld", e->amount.rub);
+		snprintf (buf, sizeof(buf), " %ld", e->amount.rub);
 	else if (e->amount.doll)
-		sprintf (buf, " $%ld", e->amount.doll);
+		snprintf (buf, sizeof(buf), " $%ld", e->amount.doll);
 	V.Put (y, 78 - strlen (buf), buf, TextAltColor);
 	if (e->amount.pcs) {
-		sprintf (buf, "(%ld)", e->amount.pcs);
+		snprintf (buf, sizeof(buf), "(%ld)", e->amount.pcs);
 		V.Put (y+1, 78 - strlen(buf), buf, TextColor);
 	}
 }

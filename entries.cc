@@ -23,7 +23,7 @@ extern void Quit (void);
 extern accountinfo *FindAccount (long acn);
 extern int IsParent (accountinfo *a);
 extern int ChooseSubAccount (Screen *scr, int y, int x, int w, long *v, char *str);
-extern void Hint (char *str);
+extern void Hint (const char *str);
 
 static menuinfo *menutab;
 static int menutabsz = 0;
@@ -56,7 +56,7 @@ void LoadEntries ()
 		++nmenu;
 		if (nmenu % 5 == 0) {
 			char buf[80];
-			sprintf (buf, "%d", nmenu);
+			snprintf (buf, sizeof(buf), "%d", nmenu);
 			Hint (buf);
 			V.Sync ();
 		}
@@ -75,7 +75,7 @@ static void NewEntry (menuinfo *m)
 	long db = m->debit;
 	long cr = m->credit;
 	Dialog *dlg;
-	char *title = " Новая проводка ";
+	const char *title = " Новая проводка ";
 	char crbuf [80], dbbuf [80];
 	strncpy (info.descr, m->descr, sizeof (info.descr));
 again:
@@ -140,7 +140,7 @@ again:
 					    &sum, &info.descr);
 			}
 		} else {
-			sprintf (crbuf, "%ld  %.20s", pc->acn, pc->descr);
+			snprintf (crbuf, sizeof(crbuf), "%ld  %.20s", pc->acn, pc->descr);
 			if (pd->anal || pc->anal) {
 				if (m->currency != 1 && m->currency != 2)
 					dlg = new Dialog (title, DialogPalette,
@@ -197,7 +197,7 @@ again:
 			}
 		}
 	} else {
-		sprintf (dbbuf, "%ld  %.20s", pd->acn, pd->descr);
+		snprintf (dbbuf, sizeof(dbbuf), "%ld  %.20s", pd->acn, pd->descr);
 		if (IsParent (pc)) {
 			if (pd->anal || pc->anal) {
 				if (m->currency != 1 && m->currency != 2)
@@ -254,7 +254,7 @@ again:
 					    &sum, &info.descr);
 			}
 		} else {
-			sprintf (crbuf, "%ld  %.20s", pc->acn, pc->descr);
+			snprintf (crbuf, sizeof(crbuf), "%ld  %.20s", pc->acn, pc->descr);
 			if (pd->anal || pc->anal) {
 				if (m->currency != 1 && m->currency != 2)
 					dlg = new Dialog (title, DialogPalette,

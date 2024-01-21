@@ -48,14 +48,14 @@ char *crypt_secfile = "secring.pgp";
 #define RSA_ALGORITHM_BYTE      1       /* use RSA */
 #define IDEA_ALGORITHM_BYTE     1       /* use the IDEA cipher */
 
-int rsa_public_encrypt (void *outbuf, void *inbuf, short bytes,
-	void *E, void *N);
+//int rsa_public_encrypt (void *outbuf, void *inbuf, short bytes,
+//	void *E, void *N);
 int rsa_private_encrypt (void *outbuf, void *inbuf, short bytes,
 	void *E, void *D, void *P, void *Q, void *U, void *N);
 int rsa_public_decrypt (void *outbuf, void *inbuf,
 	void *E, void *N);
-int rsa_private_decrypt (void *outbuf, void *inbuf,
-	void *E, void *D, void *P, void *Q, void *U, void *N);
+//int rsa_private_decrypt (void *outbuf, void *inbuf,
+//	void *E, void *D, void *P, void *Q, void *U, void *N);
 
 /* Returns the length of a packet according to the CTB and
  * the length field. */

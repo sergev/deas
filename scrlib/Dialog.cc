@@ -82,7 +82,7 @@ DialogElement::DialogElement (int row, int col, int reg)
         }
 }
 
-DialogLabel::DialogLabel (int row, int col, char **p)
+DialogLabel::DialogLabel (int row, int col, const char **p)
 	: DialogElement (row, col)
 {
 	label = GetString (p);
@@ -90,7 +90,7 @@ DialogLabel::DialogLabel (int row, int col, char **p)
 	h = 1;
 }
 
-DialogButton::DialogButton (int row, int col, char **p, int *v)
+DialogButton::DialogButton (int row, int col, const char **p, int *v)
 	: DialogElement (row, col, 1)
 {
 	label = GetString (p);
@@ -99,7 +99,7 @@ DialogButton::DialogButton (int row, int col, char **p, int *v)
 	val = v;
 }
 
-DialogRadioButton::DialogRadioButton (int row, int col, char **p, int *v)
+DialogRadioButton::DialogRadioButton (int row, int col, const char **p, int *v)
 	: DialogElement (row, col, 1)
 {
 	setval = GetNumber (p);
@@ -110,7 +110,7 @@ DialogRadioButton::DialogRadioButton (int row, int col, char **p, int *v)
 	val = v;
 }
 
-DialogList::DialogList (int row, int col, char **p, long *v, int (*f) (...))
+DialogList::DialogList (int row, int col, const char **p, long *v, int (*f) (...))
 	: DialogElement (row, col, 1)
 {
 	w = 2 + GetNumber (p);
@@ -123,7 +123,7 @@ DialogList::DialogList (int row, int col, char **p, long *v, int (*f) (...))
 	(*func) (0, 0, 0, 0, v, str);
 }
 
-DialogTitle::DialogTitle (int row, int col, char **p, char *v)
+DialogTitle::DialogTitle (int row, int col, const char **p, char *v)
 	: DialogElement (row, col, 0)
 {
 	w = GetNumber (p);
@@ -131,7 +131,7 @@ DialogTitle::DialogTitle (int row, int col, char **p, char *v)
 	val = v;
 }
 
-DialogString::DialogString (int row, int col, char **p, char *v)
+DialogString::DialogString (int row, int col, const char **p, char *v)
 	: DialogElement (row, col, 1)
 {
 	w = GetNumber (p);
@@ -142,7 +142,7 @@ DialogString::DialogString (int row, int col, char **p, char *v)
 	val = v;
 }
 
-DialogPassword::DialogPassword (int row, int col, char **p, char *v)
+DialogPassword::DialogPassword (int row, int col, const char **p, char *v)
 	: DialogElement (row, col, 1)
 {
 	w = GetNumber (p);
@@ -153,7 +153,7 @@ DialogPassword::DialogPassword (int row, int col, char **p, char *v)
 	val = v;
 }
 
-DialogNumber::DialogNumber (int row, int col, char **p, long *v)
+DialogNumber::DialogNumber (int row, int col, const char **p, long *v)
 	: DialogElement (row, col, 1)
 {
 	min = GetNumber (p);
@@ -170,7 +170,7 @@ DialogNumber::DialogNumber (int row, int col, char **p, long *v)
 	val = v;
 }
 
-DialogMask::DialogMask (int row, int col, char **p, long *v)
+DialogMask::DialogMask (int row, int col, const char **p, long *v)
 	: DialogElement (row, col, 1)
 {
 	w = GetNumber (p);
@@ -178,7 +178,7 @@ DialogMask::DialogMask (int row, int col, char **p, long *v)
 	val = v;
 }
 
-DialogCommand::DialogCommand (int row, int col, char **p)
+DialogCommand::DialogCommand (int row, int col, const char **p)
 	: DialogElement (row, col, 1)
 {
 	val = GetNumber (p);
@@ -580,7 +580,7 @@ int DialogMask::Run ()
 	return ret;
 }
 
-DialogGroup::DialogGroup (int row0, int col0, char **fmt, void ***arg,
+DialogGroup::DialogGroup (int row0, int col0, const char **fmt, void ***arg,
 	int flags, DialogGroup *parent) : DialogElement (row0, col0)
 {
 	DialogElement *v = 0;
@@ -898,7 +898,7 @@ int Dialog::Run (Screen *scr)
 	return (n);
 }
 
-char *DialogElement::GetString (char **p)
+const char *DialogElement::GetString (const char **p)
 {
 	char buf[256], *q = buf;
 
@@ -918,7 +918,7 @@ char *DialogElement::GetString (char **p)
 	return (q);
 }
 
-long DialogElement::GetNumber (char **p)
+long DialogElement::GetNumber (const char **p)
 {
 	long v = 0;
 
@@ -931,7 +931,7 @@ long DialogElement::GetNumber (char **p)
 	return (v);
 }
 
-Dialog::Dialog (char *t, unsigned char *pal, char *fmt, ...)
+Dialog::Dialog (const char *t, unsigned char *pal, const char *fmt, ...)
 {
 	void **arg = (void**) &fmt + 1;
 

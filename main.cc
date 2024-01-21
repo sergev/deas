@@ -35,10 +35,10 @@ void LoadAccounts ();
 void LoadEntries ();
 
 struct {
-	char *button;
+	const char *button;
 	void (*func)();
 	int big;
-	char *help;
+	const char *help;
 	int r, w, h;
 } menu[] = {
 	{ "Операции", Entries, 1,
@@ -144,7 +144,7 @@ void RunShell ()
 	V.Sync ();
 	V.Restore ();
 
-	char *shell = getenv ("SHELL");
+	const char *shell = getenv ("SHELL");
 	if (! shell || *shell != '/')
 		shell = "/bin/sh";
 	int t = fork ();
@@ -190,15 +190,19 @@ void Fatal (char *msg)
 	Quit ();
 }
 
-void Message (char *str, ...)
+void Message (const char *str, ...)
 {
 	V.Put (0, 0, ' ', InverseTextColor);
-	if (str)
-		V.PrintVect (InverseTextColor, str, &str + 1);
+	if (str) {
+                va_list ap;
+                va_start(ap, str);
+		V.PrintVect (InverseTextColor, str, ap);
+                va_end(ap);
+        }
 	V.ClearLine (InverseTextColor);
 }
 
-void Hint (char *str)
+void Hint (const char *str)
 {
 	V.Put (V.Lines-1, 0, ' ', HintColor);
 	for (int attr=HintColor; *str; ++str)
@@ -217,7 +221,7 @@ void Redraw (int key)
 	V.Sync ();
 }
 
-void PutMultistring (int r, int c0, int maxc, char *str, int color)
+void PutMultistring (int r, int c0, int maxc, const char *str, int color)
 {
 	int c;
 
@@ -242,8 +246,8 @@ void Title ()
 	if (*username)
 		V.Print (0, 1, InverseTextColor, "Пользователь: %.16s", username);
 	date2ymd (option_date (&clnt, 0), &year, &mon, &day);
-	sprintf (buf, "%d %.3s %d", day,
-		"ДекЯнвФевМарАпрМайИюнИюлАвгСенОктНояДек" + mon*3, year);
+	snprintf (buf, sizeof(buf), "%d %.3s %d", day,
+		&"ДекЯнвФевМарАпрМайИюнИюлАвгСенОктНояДек"[mon*3], year);
 	V.Put (0, V.Columns-12, buf, InverseTextColor);
 }
 
