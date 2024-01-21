@@ -17,18 +17,12 @@
 #include "Screen.h"
 #include "Termcap.h"
 #include "extern.h"
+#include <term.h>
 
 const int BUFSIZE       = 2048;         // max length of termcap entry
 
-static char *tname;                     // terminal name
+static const char *tname;               // terminal name
 static char *tbuf;                      // terminal entry buffer
-
-extern "C" {
-	int tgetent (char *bp, char *tname);
-	int tgetnum (char *name);
-	int tgetflag (char *name);
-	char *tgetstr (char *name, char **area);
-};
 
 int Screen::InitCap (char *bp)
 {
@@ -44,7 +38,7 @@ int Screen::InitCap (char *bp)
 
 void Screen::GetCap (struct Captab *t)
 {
-	char *begarea = new char [BUFSIZE];
+	char begarea[BUFSIZE];
 	char *area = begarea;
 
 	if (! area)
@@ -58,14 +52,12 @@ void Screen::GetCap (struct Captab *t)
 
 	char *bp = new char [area - begarea];
 	if (! bp) {
-		delete begarea;
 		return;
 	}
 	memcpy (bp, begarea, area - begarea);
-	for (p=t; p->tname[0]; ++p)
+	for (auto *p=t; p->tname[0]; ++p)
 		if (p->ttype == CAPSTR && *(p->ts))
 			*(p->ts) += bp - begarea;
-	delete begarea;
 #ifdef DEBUG
 	for (p=t; p->tname[0]; ++p) {
 		printf ("%c%c", p->tname[0], p->tname[1]);

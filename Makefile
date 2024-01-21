@@ -1,7 +1,7 @@
 CFLAGS  = -O -g -Wall -Iscrlib -Ipgplib
 CXXFLAGS  = -std=c++20 -O -g -Wall -Iscrlib -Ipgplib
 CRFLAGS = $(CFLAGS) -fpic
-LDFLAGS = -g
+LDFLAGS = -g -ltermcap
 CRYPT   = pgplib/libpgp.a
 #CRYPT   = cryptnul.o
 LIBS    = scrlib/libscr.a pgplib/libpgp.a

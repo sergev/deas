@@ -38,9 +38,9 @@ CFLAGS  = -O -DTERMIOS
 
 # Use standard libtermcap, instead of internal termcap library
 #-------------------------------------------------------------
-#CAPSRC  = Termlib.cc
-#CAPOBJ  = Termlib.o
-#LIBS    = -ltermcap
+CAPSRC  = Termlib.cc
+CAPOBJ  = Termlib.o
+LIBS    = -ltermcap
 
 $(LIB): $(OBJS)
 	[ "$?" != "" ] && ar r $(LIB) $? && ranlib $(LIB)
