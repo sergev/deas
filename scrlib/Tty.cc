@@ -11,73 +11,15 @@
 // or modify this software as long as this message is kept with the software,
 // all derivative works or modified versions.
 //
-extern "C" {
-	#ifdef TERMIOS
-	    #include <sys/termios.h>
-	    #define TERMIO
-	    #define termio termios
-	    #ifdef sun
-	    #   define TCGETA TCGETS
-	    #   define TCSETA TCSETS
-	    #   define TCSETAW TCSETSW
-	    #else
-	    #   include <sys/ioctl.h>
-	    #   define TCGETA TIOCGETA
-	    #   define TCSETA TIOCSETA
-	    #   define TCSETAW TIOCSETAW
-	    #endif
-	    #ifndef OLCUC
-	    #  define OLCUC 0
-	    #endif
-	    #ifndef IUCLC
-	    #   define IUCLC 0
-	    #endif
-	    #ifndef OCRNL
-	    #   define OCRNL 0
-	    #endif
-	    #ifndef XCASE
-	    #   define XCASE 0
-	    #endif
-	#else
-	    #ifdef TERMIO
-		#include <termio.h>
-	    #else
-		#include <sgtty.h>
-	    #endif
-	#endif
-};
-
 #include "Screen.h"
+#include "TtyPrivate.h"
 
 const int CHANNEL = 2;                  // output file descriptor
 const int NOCHAR = 0;
 
-struct TtyPrivate {
-	#if defined (TERMIO) || defined (TERMIOS)
-	struct termio oldtio, newtio;
-	#else
-	struct sgttyb tty;
-	int ttyflags;
-	#ifdef TIOCSETC
-	struct tchars oldtchars, newtchars;
-	#endif
-	#endif
-
-	#ifdef NEEDLITOUT
-	int oldlocal, newlocal;
-	#endif
-
-	#ifdef TIOCSLTC
-	struct ltchars oldchars, newchars;
-	#endif
-};
-
 void Screen::SetTty ()
 {
-	if (! ttydata)
-		ttydata = new TtyPrivate;
-	if (! ttydata)
-		return;
+	ttydata = std::make_unique<TtyPrivate>();
 #ifdef TERMIO
 	if (ioctl (CHANNEL, TCGETA, (char *) &ttydata->oldtio) < 0)
 		return;

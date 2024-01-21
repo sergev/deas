@@ -23,9 +23,12 @@ struct helptab {
 void Help (char *item)
 {
 	// Выдача справки по указанной теме.
-	for (struct helptab *p=helpTab; p->item; ++p)
-		if (! strcmp (item, p->item))
+	struct helptab *p = helpTab;
+	for (; p->item; ++p) {
+		if (! strcmp (item, p->item)) {
 			break;
+                }
+        }
 	V.PopupString (" Справка ", p->item ? p->rinfo : "Нет информации\n",
 		" Готово ", HelpColor, TextColor);
 }

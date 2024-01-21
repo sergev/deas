@@ -54,7 +54,7 @@ static const int GRP_CENTER = 2;
 #if 1
 extern "C" {
 	void Message (char *fmt, ...);
-	getch (void);
+	int getch (void);
 };
 #endif
 
@@ -70,14 +70,16 @@ DialogElement::DialogElement (int row, int col, int reg)
 	c = col;
 	w = h = 0;
 	oblig = 0;
-	if (reg)
+	if (reg) {
 		if (list) {
 			next = list;
 			prev = list->prev;
 			list->prev = this;
 			prev->next = this;
-		} else
+		} else {
 			list = next = prev = this;
+                }
+        }
 }
 
 DialogLabel::DialogLabel (int row, int col, char **p)
@@ -377,7 +379,7 @@ int DialogString::Run ()
 		case meta ('x'):			// Delete
 			if (x == len)
 				continue;
-			for (i=x; i<len; ++i)
+			for (int i=x; i<len; ++i)
 				val[i] = val[i+1];
 			--len;
 			scr->PutLimited (val+x, w-x,
@@ -444,7 +446,7 @@ int DialogPassword::Run ()
 		case meta ('x'):			// Delete
 			if (x == len)
 				continue;
-			for (i=x; i<len; ++i)
+			for (int i=x; i<len; ++i)
 				val[i] = val[i+1];
 			--len;
 			scr->Put (r+baserow, c+basecol+len, ' ',
@@ -460,8 +462,9 @@ int DialogNumber::Run ()
 	int ret = 0;
 
 	*buf = 0;
-	if (*val)
-		sprintf (buf, "%ld", *val);
+	if (*val) {
+		snprintf (buf, sizeof(buf), "%ld", *val);
+        }
 	scr->Put (r+baserow, c+basecol, buf, palette[ColorFieldSelected]);
 	int x = 0;
 	int len = strlen (buf);
@@ -514,7 +517,7 @@ int DialogNumber::Run ()
 		case meta ('x'):				// Delete
 			if (x == len)
 				continue;
-			for (i=x; i<len; ++i)
+			for (int i=x; i<len; ++i)
 				buf[i] = buf[i+1];
 			--len;
 			scr->PutLimited (buf+x, w-x,
@@ -855,7 +858,7 @@ int Dialog::Run (Screen *scr)
 	// Draw shadow.
 	for (int i=0; i<w; ++i)
 		scr->AttrLow (r-1+h, c+i-1);
-	for (i=0; i<h-1; ++i)
+	for (int i=0; i<h-1; ++i)
 		scr->AttrLow (r+i, c+w-2);
 
 	DialogElement::scr = scr;

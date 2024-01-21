@@ -1,4 +1,5 @@
 CFLAGS  = -O -g -Wall -Iscrlib -Ipgplib
+CXXFLAGS  = -O -g -Wall -Iscrlib -Ipgplib
 CRFLAGS = $(CFLAGS) -fpic
 LDFLAGS = -g
 CRYPT   = pgplib/libpgp.a
@@ -113,59 +114,3 @@ dos:
 	 zip -rm $(PROG)dos $(PROG)dos
 
 ###
-client.o: client.c /usr/include/unistd.h /usr/include/sys/cdefs.h \
-  /usr/include/sys/types.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h \
-  /usr/include/sys/unistd.h /usr/include/string.h /usr/include/stdio.h \
-  /usr/include/netdb.h /usr/include/time.h /usr/include/sys/socket.h \
-  /usr/include/netinet/in.h /usr/include/netinet/tcp.h \
-  /usr/include/arpa/inet.h deas.h pgplib/pgplib.h
-lib.o: lib.c /usr/include/stdio.h /usr/include/sys/types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h \
-  /usr/include/stdlib.h /usr/include/string.h /usr/include/fcntl.h \
-  /usr/include/unistd.h /usr/include/sys/unistd.h /usr/include/sys/stat.h \
-  /usr/include/sys/time.h /usr/include/time.h deas.h
-util.o: util.c /usr/include/sys/types.h /usr/include/sys/cdefs.h \
-  /usr/include/machine/endian.h /usr/include/machine/ansi.h \
-  /usr/include/machine/types.h /usr/include/sys/uio.h /usr/include/unistd.h \
-  /usr/include/sys/unistd.h deas.h
-server.o: server.c /usr/include/stdio.h /usr/include/sys/types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h \
-  /usr/include/stdlib.h /usr/include/unistd.h /usr/include/sys/unistd.h \
-  /usr/include/string.h /usr/include/errno.h /usr/include/time.h \
-  /usr/include/sys/socket.h /usr/include/netinet/in.h \
-  /usr/include/netinet/tcp.h deas.h pgplib/pgplib.h
-accounts.o: accounts.cc /usr/include/stdio.h /usr/include/sys/types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h \
-  /usr/include/stdlib.h /usr/include/string.h scrlib/Screen.h scrlib/Dialog.h \
-  deas.h
-entries.o: entries.cc
-help.o: help.cc scrlib/Screen.h
-journal.o: journal.cc /usr/include/stdio.h /usr/include/sys/types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h \
-  /usr/include/stdlib.h /usr/include/string.h scrlib/Screen.h scrlib/Dialog.h \
-  deas.h
-main.o: main.cc /usr/include/stdio.h /usr/include/sys/types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h \
-  /usr/include/stdlib.h /usr/include/string.h /usr/include/unistd.h \
-  /usr/include/sys/unistd.h /usr/include/signal.h /usr/include/sys/signal.h \
-  /usr/include/machine/signal.h /usr/include/machine/trap.h \
-  /usr/include/sys/wait.h /usr/include/rpc/rpc.h /usr/include/rpc/types.h \
-  /usr/include/sys/time.h /usr/include/time.h /usr/include/netinet/in.h \
-  /usr/include/rpc/xdr.h /usr/include/rpc/auth.h /usr/include/rpc/clnt.h \
-  /usr/include/rpc/rpc_msg.h /usr/include/rpc/auth_unix.h \
-  /usr/include/rpc/svc.h /usr/include/rpc/svc_auth.h scrlib/Screen.h \
-  scrlib/Popup.h scrlib/Dialog.h deas.h
-users.o: users.cc /usr/include/string.h /usr/include/machine/ansi.h \
-  /usr/include/sys/cdefs.h scrlib/Screen.h deas.h
-deasctl.o: deasctl.c /usr/include/stdio.h /usr/include/sys/types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h \
-  /usr/include/ctype.h /usr/include/runetype.h /usr/include/unistd.h \
-  /usr/include/sys/unistd.h pgplib/mpilib.h /usr/include/string.h pgplib/usuals.h pgplib/mpiio.h \
-  pgplib/idea.h pgplib/md5.h

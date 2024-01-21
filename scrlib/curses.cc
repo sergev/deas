@@ -13,11 +13,7 @@
 //
 #include <stdlib.h>
 #include <string.h>
-#ifdef unix
-#   include <unistd.h>
-#else
-#   include <io.h>
-#endif
+#include <unistd.h>
 #include "Screen.h"
 
 static Screen *V;
@@ -27,7 +23,7 @@ static int inverseColor, inverseBoldColor, inverseDimColor;
 
 static void fatal ()
 {
-	char *msg = "curses not initialized\n";
+	const char *msg = "curses not initialized\n";
 	write (2, msg, strlen (msg));
 	exit (-1);
 }
@@ -179,63 +175,28 @@ WINDOW *initscr ()
 	return (stdscr);
 }
 
-#ifdef sparc
-#   include <stdarg.h>
-#   define MAXARGS 256
-
-int printw (char *fmt, ...)
-{
-	va_list ap;
-	int argno = 0;
-	char *args [MAXARGS];
-
-	if (! V)
-		fatal ();
-	va_start (ap, fmt);
-	while (args [argno++] = va_arg (ap, char *))
-		continue;
-	va_end (ap);
-	V->PrintVect (color, fmt, args);
-	return (TRUE);
-}
-
-int mvprintw (int y, int x, char *fmt, ...)
-{
-	va_list ap;
-	int argno = 0;
-	char *args [MAXARGS];
-
-	if (! V)
-		fatal ();
-	va_start (ap, fmt);
-	while (args [argno++] = va_arg (ap, char *))
-		continue;
-	va_end (ap);
-	V->Move (y, x);
-	V->PrintVect (color, fmt, args);
-	return (TRUE);
-}
-
-#else
-
-int printw (char *fmt, ...)
+int printw (const char *fmt, ...)
 {
 	if (! V)
 		fatal ();
-	V->PrintVect (color, fmt, &fmt + 1);
+        va_list ap;
+        va_start(ap, fmt);
+	V->PrintVect (color, fmt, ap);
+        va_end(ap);
 	return (TRUE);
 }
 
-int mvprintw (int y, int x, char *fmt, ...)
+int mvprintw (int y, int x, const char *fmt, ...)
 {
 	if (! V)
 		fatal ();
 	V->Move (y, x);
-	V->PrintVect (color, fmt, &fmt + 1);
+        va_list ap;
+        va_start(ap, fmt);
+	V->PrintVect (color, fmt, ap);
+        va_end(ap);
 	return (TRUE);
 }
-
-#endif
 
 int attrset (int a)
 {

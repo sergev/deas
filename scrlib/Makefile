@@ -26,7 +26,7 @@ LIB     = libscr.a
 
 # For FreeBSD
 #-----------
-CPLUS   = g++ -Wall -g
+CPLUS   = g++ -Wall -g -std=c++20
 CC      = gcc -Wall -g
 CFLAGS  = -O -DTERMIOS
 
@@ -92,47 +92,18 @@ dos:
 	$(CPLUS) $(CFLAGS) -c $<
 
 ###
-Box.o: Box.cc Screen.h extern.h /usr/include/stdlib.h \
-  /usr/include/machine/ansi.h /usr/include/sys/cdefs.h
-Dialog.o: Dialog.cc /usr/include/stdarg.h extern.h /usr/include/stdlib.h \
-  /usr/include/machine/ansi.h /usr/include/sys/cdefs.h Screen.h Dialog.h
-Key.o: Key.cc /usr/include/setjmp.h /usr/include/sys/cdefs.h \
-  /usr/include/signal.h /usr/include/sys/types.h \
-  /usr/include/machine/endian.h /usr/include/machine/ansi.h \
-  /usr/include/machine/types.h /usr/include/sys/signal.h \
-  /usr/include/machine/signal.h /usr/include/machine/trap.h \
-  /usr/include/errno.h Screen.h Termcap.h extern.h /usr/include/stdlib.h
-Menu.o: Menu.cc Screen.h Menu.h extern.h /usr/include/stdlib.h \
-  /usr/include/machine/ansi.h /usr/include/sys/cdefs.h
-Popup.o: Popup.cc Screen.h Popup.h extern.h /usr/include/stdlib.h \
-  /usr/include/machine/ansi.h /usr/include/sys/cdefs.h /usr/include/stdarg.h
-Screen.o: Screen.cc /usr/include/signal.h /usr/include/sys/types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h \
-  /usr/include/sys/signal.h /usr/include/machine/signal.h \
-  /usr/include/machine/trap.h Screen.h Termcap.h extern.h \
-  /usr/include/stdlib.h
-Termcap.o: Termcap.cc Screen.h Termcap.h extern.h /usr/include/stdlib.h \
-  /usr/include/machine/ansi.h /usr/include/sys/cdefs.h
-Termgoto.o: Termgoto.cc Screen.h Termcap.h extern.h /usr/include/stdlib.h \
-  /usr/include/machine/ansi.h /usr/include/sys/cdefs.h
-Termlib.o: Termlib.cc Screen.h Termcap.h extern.h /usr/include/stdlib.h \
-  /usr/include/machine/ansi.h /usr/include/sys/cdefs.h
-Tty.o: Tty.cc /usr/include/sys/termios.h /usr/include/sys/cdefs.h \
-  /usr/include/sys/ttycom.h /usr/include/sys/ioccom.h \
-  /usr/include/sys/ttydefaults.h /usr/include/sys/ioctl.h \
-  /usr/include/sys/filio.h /usr/include/sys/sockio.h Screen.h
-curses.o: curses.cc /usr/include/stdlib.h /usr/include/machine/ansi.h \
-  /usr/include/sys/cdefs.h /usr/include/string.h /usr/include/unistd.h \
-  /usr/include/sys/types.h /usr/include/machine/endian.h \
-  /usr/include/machine/types.h /usr/include/sys/unistd.h Screen.h curses.h \
-  /usr/include/stdio.h
+ctype.o: ctype.c ctype.h
+hellcurs.o: hellcurs.c curses.h
+Box.o: Box.cc Screen.h extern.h
+Dialog.o: Dialog.cc extern.h Screen.h Dialog.h
+Key.o: Key.cc Screen.h Termcap.h KeyPrivate.h extern.h
+Menu.o: Menu.cc Screen.h Menu.h extern.h
+Popup.o: Popup.cc Screen.h Popup.h extern.h
+Screen.o: Screen.cc Screen.h Termcap.h TtyPrivate.h KeyPrivate.h extern.h
+Termcap.o: Termcap.cc Screen.h Termcap.h extern.h
+Termgoto.o: Termgoto.cc Screen.h Termcap.h extern.h
+Termlib.o: Termlib.cc Screen.h Termcap.h extern.h
+Tty.o: Tty.cc Screen.h TtyPrivate.h
+curses.o: curses.cc Screen.h curses.h
 hello.o: hello.cc Screen.h
-hv.o: hv.cc /usr/include/sys/types.h /usr/include/sys/cdefs.h \
-  /usr/include/machine/endian.h /usr/include/machine/ansi.h \
-  /usr/include/machine/types.h /usr/include/sys/stat.h \
-  /usr/include/sys/time.h /usr/include/time.h /usr/include/stdio.h \
-  /usr/include/stdlib.h /usr/include/string.h /usr/include/unistd.h \
-  /usr/include/sys/unistd.h /usr/include/sys/wait.h /usr/include/signal.h \
-  /usr/include/sys/signal.h /usr/include/machine/signal.h \
-  /usr/include/machine/trap.h Screen.h Menu.h
+hv.o: hv.cc Screen.h Menu.h

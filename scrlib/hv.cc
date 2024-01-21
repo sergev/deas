@@ -18,19 +18,14 @@ extern "C" {
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <string.h>
-#ifdef unix
 	#include <unistd.h>
 	#include <sys/wait.h>
 	#include <signal.h>
 	extern char **environ;
-#endif
 	int open (char *, int);
 	int close (int);
 	int read (int, void *, unsigned);
-//      long lseek (int, long, int);
 	void exit (int);
-//	int sscanf (char *, const char *, ...);
-//      int sprintf (char *, const char *, ...);
 };
 
 #include "Screen.h"
@@ -105,7 +100,7 @@ void RunShell ()
 	V.Clear (NormalColor);
 	V.Sync ();
 	V.Restore ();
-#ifdef unix
+
 	char *shell = getenv ("SHELL");
 	if (! shell || *shell != '/')
 		shell = "/bin/sh";
@@ -138,8 +133,6 @@ void RunShell ()
 		tcsetpgrp (2, getpid ());
 		#endif
 	}
-#else
-#endif
 	V.Reopen ();
 	V.Clear (NormalColor);
 	V.Put (box);
@@ -447,57 +440,6 @@ void HexView::ViewChar (int c)
 	else
 		V.Put ((c + 0100) & 0177, DimColor);
 }
-
-#if 0
-static hsearch (l, c, pline, pcol)
-int *pline, *pcol;
-{
-	char buf [2*SEARCHSZ], *p;
-	register char *s, *e;
-	int n;
-
-	for (;;) {
-		lseek (fd, l*16L, 0);
-		n = read (fd, buf, sizeof (buf));
-		if (n <= 0)
-			break;
-		p = buf;
-		e = buf + SEARCHSZ;
-		for (s=p+c; s<e; ++s)
-			if (! MemCompare (s, viewsbuf, n<searchsz ? n : searchsz)) {
-				*pline = l + (s - p) / 16;
-				*pcol = (s - p) % 16;
-				return (1);
-			}
-		if (n < sizeof (buf))
-			break;
-		l += SEARCHSZ / 16;
-		c = 0;
-	}
-	error ("String not found");
-	return (0);
-}
-
-cvtsrch (from, to)
-register char *from, *to;
-{
-	register c, x, count;
-
-	count = 0;
-	for (count=0; c= *from++; *to++=c, ++count)
-		if (c == '\\' && (x = *from)) {
-			++from;
-			if (x != '\\') {
-				c = GETHEX (x);
-				if ((x = *from) && x!='\\') {
-					++from;
-					c = c<<4 | GETHEX (x);
-				}
-			}
-		}
-	return (count);
-}
-#endif
 
 int main (int argc, char **argv)
 {

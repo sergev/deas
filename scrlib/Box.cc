@@ -39,8 +39,9 @@ void Screen::Put (Box &box, int attr)
 		attr = attr<<8 & 0x7f00;
 	for (int yy=0; yy<box.ny; ++yy) {
 		short *q = & box.mem [yy * box.nx];
-		for (int xx=0; xx<box.nx; ++xx)
-			pokeChar (box.y+yy, box.x+xx, attr ?
-				*q++ & 0377 | attr : *q++);
+		for (int xx=0; xx<box.nx; ++xx) {
+		        auto ch = attr ? ((*q++ & 0377) | attr) : *q++;
+			pokeChar (box.y + yy, box.x + xx, ch);
+                }
 	}
 }

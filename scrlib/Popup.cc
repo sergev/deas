@@ -23,13 +23,16 @@ struct choice {
 };
 
 static struct choice tab [3];
-static cnum;
+static int cnum;
 
 void Screen::Error (int c, int i, char *head, char *reply, char *s, ...)
 {
 	char buf [100];
 
-	vsprintf (buf, s, (char *) (&s + 1));
+        va_list ap;
+        va_start(ap, s);
+	vsnprintf (buf, sizeof(buf), s, ap);
+        va_end(ap);
 	Popup (head, buf, 0, reply, 0, 0, c, i);
 }
 
@@ -73,7 +76,7 @@ int Screen::Popup (char *head, char *mesg, char *mesg2,
 	// Draw shadow.
 	for (int i=0; i<w; ++i)
 		AttrLow (r+h, c+i+1);
-	for (i=0; i<h-1; ++i)
+	for (int i=0; i<h-1; ++i)
 		AttrLow (r+i+1, c+w);
 
 	initChoice (r+4, c+w/2, c1, c2, c3);
@@ -252,7 +255,7 @@ char *Screen::GetString (int w, char *str, char *head, char *mesg, int color, in
 	// Draw shadow.
 	for (int i=0; i<w; ++i)
 		AttrLow (r+h, c+i+1);
-	for (i=0; i<h-1; ++i)
+	for (int i=0; i<h-1; ++i)
 		AttrLow (r+i+1, c+w);
 
 	static char buf [129];
@@ -265,7 +268,7 @@ char *Screen::GetString (int w, char *str, char *head, char *mesg, int color, in
 
 // Отрисовка мультистроки в popup-окне с задержкой ввода.
 
-void Screen::PopupString (char *title, char *str, char *reply, int color, int inverse)
+void Screen::PopupString (char *title, const char *str, char *reply, int color, int inverse)
 {
 	int w, h, r, c;
 
@@ -273,9 +276,9 @@ void Screen::PopupString (char *title, char *str, char *reply, int color, int in
 	// разделенных символом \n.  Просмотрим мультистроку и вычислим
 	// ее ширину и высоту.
 	w = h = r = 0;
-	char *p = str;
+	const char *p = str;
 	for (;;) {
-		char *q = strchr (p, '\n');
+		const char *q = strchr (p, '\n');
 		if (! q)
 			break;
 		if (q-p > w)
@@ -306,7 +309,7 @@ void Screen::PopupString (char *title, char *str, char *reply, int color, int in
 	DrawFrame (r, c, h, w, color);                	// рамка
 	for (int i=0; i<w; ++i)
 		AttrLow (r+h, c+i+1);                 	// тень снизу
-	for (i=0; i<h-1; ++i)
+	for (int i=0; i<h-1; ++i)
 		AttrLow (r+i+1, c+w);                 	// тень справа
 
 	// Рисуем заголовок.
@@ -314,8 +317,8 @@ void Screen::PopupString (char *title, char *str, char *reply, int color, int in
 
 	// Рисуем мультистроку.
 	p = str;
-	for (i=r+1; ; ++i) {
-		char *q = strchr (p, '\n');
+	for (int i=r+1; ; ++i) {
+		const char *q = strchr (p, '\n');
 		if (! q)
 			break;
 		PutLimited (i, c+2, p, q-p, color);
@@ -365,7 +368,7 @@ Flash::Flash (Screen *s, char *head, char *mesg, int color)
 	// Draw shadow.
 	for (int i=0; i<w; ++i)
 		s->AttrLow (r+h, c+i+1);
-	for (i=0; i<h-1; ++i)
+	for (int i=0; i<h-1; ++i)
 		s->AttrLow (r+i+1, c+w);
 	s->HideCursor ();
 	s->Sync ();
@@ -413,20 +416,20 @@ int Screen::SelectFromList (int color, int inverse, char *head, char *mesg,
 	Put (r+1, c + (w-strlen(mesg)) / 2, mesg, color);
 
 	// Draw shadow.
-	for (i=0; i<w; ++i)
+	for (int i=0; i<w; ++i)
 		AttrLow (r+h, c+i+1);
-	for (i=0; i<h-1; ++i)
+	for (int i=0; i<h-1; ++i)
 		AttrLow (r+i+1, c+w);
 
 	// Рисуем мультистроку.
 	va_start (ap, cnt);
-	for (i=0; i<cnt; ++i) {
+	for (int i=0; i<cnt; ++i) {
 		char *elem = va_arg (ap, char *);
 		Put (r+3+i, c+off, elem, color);
 	}
 	va_end (ap);
 
-	i = 0;
+	int i = 0;
 	for (;;) {
 		Box *curbox = new Box (*this, r+3+i, c+off, 1, maxlen);
 		Put (*curbox, inverse);
@@ -502,7 +505,7 @@ int Screen::SelectFromTable (int color, int inverse, char *head, char *mesg,
 	int off[80];
 	int o = (w - 4 - ncol*maxlen) / (ncol+1);
 	off[0] = 2 + o;
-	for (i=1; i<ncol; ++i)
+	for (int i=1; i<ncol; ++i)
 		off[i] = off[i-1] + maxlen + o;
 
 	Box box (*this, r, c, h+1, w+1);                // save box
@@ -512,17 +515,19 @@ int Screen::SelectFromTable (int color, int inverse, char *head, char *mesg,
 	Put (r+1, c + (w-strlen(mesg)) / 2, mesg, color);
 
 	// Draw shadow.
-	for (i=0; i<w; ++i)
+	for (int i=0; i<w; ++i)
 		AttrLow (r+h, c+i+1);
-	for (i=0; i<h-1; ++i)
+	for (int i=0; i<h-1; ++i)
 		AttrLow (r+i+1, c+w);
 
 	// Рисуем мультистроки.
-	for (int n=0; n<ncol; ++n)
-		for (i=0; i<nrow; ++i)
+	for (int n=0; n<ncol; ++n) {
+		for (int i=0; i<nrow; ++i) {
 			Put (r+3+i, c+off[n], elem[i+nrow*n], color);
+                }
+        }
 
-	n = i = 0;
+	int n = 0, i = 0;
 	for (;;) {
 		Box *curbox = new Box (*this, r+3+i, c+off[n], 1, maxlen);
 		Put (*curbox, inverse);

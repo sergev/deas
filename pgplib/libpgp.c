@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <ctype.h>
-#ifdef unix
-#   include <unistd.h>
-#endif
+#include <unistd.h>
 #include "mpilib.h"
 #include "mpiio.h"
 #include "idea.h"
@@ -96,7 +94,7 @@ word16	mpi_checksum;
 
 /*
  * Read a mutiprecision integer from a file.
- * adjust_precision is TRUE iff we should call set_precision to the 
+ * adjust_precision is TRUE iff we should call set_precision to the
  * size of the number read in.
  * scrambled is TRUE iff field is encrypted (protects secret key fields).
  * Returns the bitcount of the number read in, or returns a negative

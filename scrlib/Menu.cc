@@ -100,10 +100,10 @@ void Menu::Display (Screen *scr, int row)
 		return;
 	}
 	column[0] = 1;
-	for (i=1; i<nmenus; ++i)
+	for (int i=1; i<nmenus; ++i)
 		column[i] = column[i-1] + menu[i-1]->NameLength();
 	scr->ClearLine (row, 0, color);
-	for (i=0; i<nmenus; ++i) {
+	for (int i=0; i<nmenus; ++i) {
 		scr->Put (row, column[i], ' ', color);
 		displayName (scr, menu[i]->Name(), color, light);
 		scr->Put (' ', color);
@@ -139,13 +139,16 @@ void Menu::Run (Screen *scr, int row, int key, int subkey)
 		case cntrl ('J'):       // Line feed - stay in menu
 			break;
 		default:
-			for (i=0; i<nmenus; ++i)
+			for (int i=0; ; ++i) {
+                                if (i >= nmenus) {
+                                        scr->Beep ();
+                                        break;
+                                }
 				if (alt (menu[i]->HotKey()) == k) {
 					current = i;
 					break;
 				}
-			if (i >= nmenus)
-				scr->Beep ();
+                        }
 			break;
 		case meta ('r'):        // right
 			if (++current >= nmenus)
@@ -340,9 +343,9 @@ void SubMenu::Draw (Screen *scr, int row, int col,
 	}
 
 	// Draw shadow.
-	for (i=0; i<width; ++i)
+	for (int i=0; i<width; ++i)
 		scr->AttrLow (row+height, col+i+1);
-	for (i=0; i<height-1; ++i)
+	for (int i=0; i<height-1; ++i)
 		scr->AttrLow (row+i+1, col+width);
 }
 

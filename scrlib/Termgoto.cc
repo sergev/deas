@@ -19,7 +19,7 @@ const int MAXRETURNSIZE = 64;           // max length of 'goto' string
 
 #define TPARMERR(c)     { strcpy (outp, (c)); return; }
 
-static void tparm (char *outp, char *cp, int p1, int p2);
+static void tparm (char *outp, const char *cp, int p1, int p2);
 
 // Routine to perform cursor addressing.
 // CM is a string containing printf type escapes to allow
@@ -44,22 +44,23 @@ static void tparm (char *outp, char *cp, int p1, int p2);
 //
 // all other characters are ``self-inserting''.
 
-char *Screen::Goto (char *CM, int destcol, int destline)
+const char *Screen::Goto (const char *CM, int destcol, int destline)
 {
-	char *cp, *dp;
+	const char *cp = CM;
+	char *dp;
 	int c, which, oncol;
 	static char result [MAXRETURNSIZE];
 
 #ifdef DEBUG
 	printf ("CM='%s'\n", CM);
 #endif
-	cp = CM;
-	if (! cp)
+	if (! cp) {
 toohard:        return ("bad capgoto");
+        }
 	dp = result;
 	oncol = 0;
 	which = destline;
-	while (c = *cp++) {
+	while ((c = *cp++)) {
 		if (c != '%') {
 			*dp++ = c;
 			continue;
@@ -135,12 +136,12 @@ setwhich:               which = oncol ? destcol : destline;
 	return (result);
 }
 
-static char *branchto (char *cp, int to)
+static const char *branchto (const char *cp, int to)
 {
 	int c, level;
 
 	level = 0;
-	while (c = *cp++) {
+	while ((c = *cp++)) {
 		if (c == '%') {
 			if ((c = *cp++) == to || c == ';') {
 				if (level == 0) {
@@ -186,7 +187,7 @@ static char *branchto (char *cp, int to)
 //
 // all other characters are ``self-inserting''.  %% gets % output.
 
-static void tparm (char *outp, char *cp, int p1, int p2)
+static void tparm (char *outp, const char *cp, int p1, int p2)
 {
 	int c, op, vars [26], stack [10], top, sign;
 
@@ -196,7 +197,7 @@ static void tparm (char *outp, char *cp, int p1, int p2)
 	if (! cp)
 		TPARMERR ("null arg");
 	top = 0;
-	while (c = *cp++) {
+	while ((c = *cp++)) {
 		if (c != '%') {
 			*outp++ = c;
 			continue;
@@ -223,7 +224,7 @@ three:
 				goto three;
 			if (c == '2' && *cp++ != 'd')
 				TPARMERR ("bad char after %2");
-two:	
+two:
 			*outp++ = op / 10 | '0';
 one:
 			*outp++ = op % 10 | '0';

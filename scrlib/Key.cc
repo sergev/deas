@@ -15,31 +15,21 @@ extern "C" {
 	#include <setjmp.h>
 	#include <signal.h>
 	#include <errno.h>
+	#include <stdlib.h>
 };
 
 #include "Screen.h"
 #include "Termcap.h"
+#include "KeyPrivate.h"
 #include "extern.h"
 
 #define MAXCALLB 10
 
 const int NKEY = 100;
 
-struct callBack {
-	int key;
-	void (*func) (int);
-};
-
-struct KeyPrivate {
-	int keyback;
-	struct Keytab *keymap;
-	struct callBack callBackTable[MAXCALLB];
-	int ncallb;
-};
-
 static jmp_buf wakeup;
 
-static void badkey ()
+static void badkey (int)
 {
 	longjmp (wakeup, -1);
 }
@@ -49,8 +39,10 @@ static void badkey ()
 // First, check if there is ->str.
 // Then compare lengths, then strings.
 // If equal, check ->tcap field.
-static int compkeys (struct Keytab *a, struct Keytab *b)
+static int compkeys (const void *ap, const void *bp)
 {
+        const struct Keytab *a = (const struct Keytab *)ap;
+        const struct Keytab *b = (const struct Keytab *)bp;
 	int cmp;
 
 	if (! a->str) {
@@ -80,10 +72,7 @@ void Screen::InitKey (struct Keytab *map)
 	struct Captab *t;
 	static struct Keytab nulltab = { 0 };
 
-	if (! keydata)
-		keydata = new KeyPrivate;
-	if (! keydata)
-		return;
+	keydata = std::make_unique<KeyPrivate>();
 	keydata->keyback = 0;
 	keydata->ncallb = 0;
 	keydata->keymap = map ? map : &nulltab;
@@ -102,7 +91,7 @@ void Screen::InitKey (struct Keytab *map)
 	t->tname[0] = 0;
 	GetCap (tab);
 	qsort ((char *) keydata->keymap, (unsigned) (kp - keydata->keymap),
-		sizeof (keydata->keymap[0]), (void*) compkeys);
+		sizeof (keydata->keymap[0]), compkeys);
 #ifdef notdef
 	{
 		struct Keytab *p;
@@ -164,9 +153,11 @@ int Screen::GetKey ()
 	Flush ();
 nextkey:
 	c = InputChar ();
-	for (struct Keytab *kp=keydata->keymap; kp->str; ++kp)
+	struct Keytab *kp;
+	for (kp=keydata->keymap; kp->str; ++kp) {
 		if ((char) c == kp->str[0])
 			break;
+        }
 	if (! kp->str) {
 #ifdef DOC
 		if (c == cntrl ('_')) {
@@ -192,14 +183,14 @@ nextkey:
 #endif
 	} else if (! kp->str [1]) {
 		c = kp->val;
-	} else if (j = setjmp (wakeup)) {       // look for escape sequence
+	} else if ((j = setjmp (wakeup))) {       // look for escape sequence
 		// time out or unknown escape sequence
 		alarm (oldalarm);
 		FlushTtyInput ();
 		if (j > 0)
 			goto nextkey;
 	} else {
-		signal (SIGALRM, (void*) badkey);
+		signal (SIGALRM, badkey);
 		oldalarm = alarm (2);
 		c = inputKey (kp);
 		alarm (oldalarm);

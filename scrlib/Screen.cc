@@ -16,31 +16,34 @@
 // #define STRINIT              // send 'is' on display open
 // #define NOKEYPAD             // don't use 'ks', 'ke'
 
-extern "C" {
-	#include <signal.h>
-};
+#include <signal.h>
+#include <fcntl.h>
+#include <stdio.h>
 
 #include "Screen.h"
 #include "Termcap.h"
+#include "TtyPrivate.h"
+#include "KeyPrivate.h"
 #include "extern.h"
 
 const int NOCHANGE = -1;
 
 static char MS, C2;
-static NF, NB, LINES, COLS;
-static char *AS, *AE, *AC, *GS, *GE, *G1, *G2, *GT;
-static char *CS, *SF, *SR;
-static char *CL, *CE, *CM, *SE, *SO, *TE, *TI, *VI, *VE, *VS;
-static char *AL, *DL, *FS, *MD, *MH, *ME, *MR;
-static char *CF, *CB, *MF, *MB;
+static int NF, NB, LINES, COLS;
+static const char *AS, *AE, *AC, *GS, *GE, *G1, *G2;
+static char *GT;
+static const char *CS, *SF, *SR;
+static const char *CL, *CE, *CM, *SE, *SO, *TE, *TI, *VI, *VE, *VS;
+static const char *AL, *DL, *FS, *MD, *MH, *ME, *MR;
+static const char *CF, *CB, *MF, *MB;
 
 #ifndef NOKEYPAD
-static char *KS, *KE;
+static const char *KS, *KE;
 #endif
 
 #ifdef CYRILLIC
 static char Cy;
-static char *Cs, *Ce, *Ct;
+static const char *Cs, *Ce, *Ct;
 #endif
 
 static struct Captab outtab [] = {
@@ -85,7 +88,7 @@ static struct Captab outtab [] = {
 	{ "ge", CAPSTR, 0, 0, 0, &GE, },
 	{ "g1", CAPSTR, 0, 0, 0, &G1, },
 	{ "g2", CAPSTR, 0, 0, 0, &G2, },
-	{ "gt", CAPSTR, 0, 0, 0, &GT, },
+	{ "gt", CAPSTR, 0, 0, 0, (const char**)&GT, },
 	{ "cs", CAPSTR, 0, 0, 0, &CS, },
 	{ "sf", CAPSTR, 0, 0, 0, &SF, },
 	{ "sr", CAPSTR, 0, 0, 0, &SR, },
@@ -173,7 +176,7 @@ static struct Keytab keytab [] = {
 #ifdef SIGTSTP
 static Screen *screenptr;
 
-void _Screen_tstp ()
+void _Screen_tstp (int)
 {
 	if (screenptr) {
 		screenptr->putStr (screenptr->Goto (CM, 0, screenptr->Lines-1));
@@ -233,18 +236,18 @@ inline void Screen::putChar (unsigned char c)
 	putRawChar (c);
 }
 
-void Screen::putStr (char *cp)
+void Screen::putStr (const char *cp)
 {
 	int c;
 
 	if (! cp)
 		return;
 	cp = skipDelay (cp);
-	while (c = *cp++)
+	while ((c = *cp++))
 		putRawChar (c);
 }
 
-char *Screen::skipDelay (char *cp)
+const char *Screen::skipDelay (const char *cp)
 {
 	while (*cp>='0' && *cp<='9')
 		++cp;
@@ -285,8 +288,6 @@ Screen::Screen (int cmode, int gmode)
 		VisualMask |= VisualGraph;
 	UpperCaseMode = 0;
 	outptr = outbuf;
-	ttydata = 0;
-	keydata = 0;
 	hidden = 0;
 	beepflag = 0;
 	flgs = oldflgs = NormalAttr = ClearAttr = 0x700;
@@ -296,11 +297,7 @@ Screen::Screen (int cmode, int gmode)
 	cyrinput = cyroutput = 0;
 #endif
 
-	char *buf = new char [2048];
-	if (! buf) {
-		outerr ("out of memory in Screen constructor\n");
-		exit (1);
-	}
+	char buf[2048];
 	if (! InitCap (buf)) {
 		outerr ("cannot read termcap\n");
 		exit (1);
@@ -311,7 +308,6 @@ Screen::Screen (int cmode, int gmode)
 	}
 	InitKey (keytab);
 	Open ();
-	delete buf;
 }
 
 Screen::~Screen ()
@@ -333,10 +329,6 @@ Screen::~Screen ()
 		delete lastch;
 	if (lnum)
 		delete lnum;
-	if (ttydata)
-		delete (void*) ttydata;
-	if (keydata)
-		delete (void*) keydata;
 }
 
 int Screen::Init ()
@@ -388,23 +380,26 @@ int Screen::Init ()
 			MF = "0123456789ABCDEF";
 		if (! MB)
 			MB = "0123456789ABCDEF";
-		for (int i=0; i<16; ++i)
+		for (int i=0; i<16; ++i) {
 			ctab [i] = btab [i] = -1;
-		for (i=0; i<16 && i<NF; ++i)
+                }
+		for (int i=0; i<16 && i<NF; ++i) {
 			if (! MF [i])
 				break;
 			else if (MF[i]>='0' && MF[i]<='9')
 				ctab [MF [i] - '0'] = i;
 			else if (MF[i]>='A' && MF[i]<='F')
 				ctab [MF [i] - 'A' + 10] = i;
-		for (i=0; i<16 && i<NB; ++i)
+                }
+		for (int i=0; i<16 && i<NB; ++i) {
 			if (! MB [i])
 				break;
 			else if (MB[i]>='0' && MB[i]<='9')
 				btab [MB [i] - '0'] = i;
 			else if (MF[i]>='A' && MF[i]<='F')
 				btab [MB [i] - 'A' + 10] = i;
-		for (i=1; i<8; ++i) {
+                }
+		for (int i=1; i<8; ++i) {
 			if (ctab[i] >= 0 && ctab[i+8] < 0)
 				ctab [i+8] = ctab [i];
 			if (ctab[i+8] >= 0 && ctab[i] < 0)
@@ -414,10 +409,11 @@ int Screen::Init ()
 			if (btab[i+8] >= 0 && btab[i] < 0)
 				btab [i] = btab [i+8];
 		}
-	} else
+	} else {
 		CE = 0;         // Don't use clear to end of line.
+        }
 	if (HasGraph ()) {
-		char *g = 0;
+		const char *g = 0;
 		if (G1)
 			g = G1;
 		else if (G2)
@@ -426,10 +422,10 @@ int Screen::Init ()
 			GT [1] = GT [0];
 			g = GT+1;
 		}
-		if (g)
+		if (g) {
 			for (int i=0; i<11 && *g; ++i, ++g)
 				linedraw [i] = *g;
-		else if (AC) {
+		} else if (AC) {
 			GS = AS;
 			GE = AE;
 			for (; AC[0] && AC[1]; AC+=2)
@@ -450,7 +446,7 @@ int Screen::Init ()
 	}
 #ifdef CYRILLIC
 	if (Cy) {
-		register fd;
+		int fd;
 
 		if (! Cs)
 			Cs = "\16";
@@ -465,7 +461,7 @@ int Screen::Init ()
 		read (fd, (char*) CyrInputTable, sizeof (CyrInputTable));
 		close (fd);
 	} else {
-		register i;
+		int i;
 		Cs = Ce = 0;
 simpletab:
 		for (i=' '; i<='~'; ++i)
@@ -491,11 +487,11 @@ nomem:          outerr ("out of memory in Screen Init\n");
 		firstch [i] = lastch [i] = NOCHANGE;
 		lnum [i] = i;
 	}
-	for (i=0; i<Lines; ++i) {
+	for (int i=0; i<Lines; ++i) {
 		scr[i] = new short [Columns];
 		oldscr[i] = new short [Columns];
 	}
-	for (i=0; i<Lines; ++i) {
+	for (int i=0; i<Lines; ++i) {
 		if (! scr[i] || ! oldscr[i])
 			goto nomem;
 		for (short *sp=scr[i]; sp < scr[i]+Columns; ++sp)
@@ -515,7 +511,7 @@ void Screen::Open ()
 	SetTty ();
 #ifdef SIGTSTP
 	screenptr = this;
-	signal (SIGTSTP, (void*) _Screen_tstp);
+	signal (SIGTSTP, _Screen_tstp);
 #endif
 	if (TI)
 		putStr (TI);
@@ -529,7 +525,7 @@ void Screen::Reopen ()
 {
 	SetTty ();
 #ifdef SIGTSTP
-	signal (SIGTSTP, (void*) _Screen_tstp);
+	signal (SIGTSTP, _Screen_tstp);
 #endif
 	if (TI)
 		putStr (TI);
@@ -638,26 +634,29 @@ void Screen::setAttr (int c)
 	int fg = c>>8 & 15;
 	switch (Visuals & VisualMask & (VisualBold|VisualDim|VisualInverse)) {
 	case VisualBold | VisualDim | VisualInverse:
-		if (c & 0x7000)
+		if (c & 0x7000) {
 			if (fg > 7) goto bold_inverse;
 			else if (fg < 7) goto dim_inverse;
 			else goto inverse;
+                }
 		if (fg > 7) goto bold;
 		if (fg < 7) goto dim;
 		goto normal;
 	case VisualDim | VisualInverse:
-		if (! (c & 0x7000))
+		if (! (c & 0x7000)) {
 			if (fg >= 7) goto normal;
 			else goto dim;
+                }
 		if (fg >= 7) goto inverse;
 	dim_inverse:
 		putStr (MH);
 		putStr (SO);
 		break;
 	case VisualBold | VisualInverse:
-		if (! (c & 0x7000))
+		if (! (c & 0x7000)) {
 			if (fg <= 7) goto normal;
 			else goto bold;
+                }
 		if (fg <= 7) goto inverse;
 	bold_inverse:
 		putStr (MD);
@@ -738,7 +737,7 @@ void Screen::Sync (int y)
 			while (p>next && p[0] == p[-1])
 				--p;
 		// If there are more than 4 characters to clear, use CE.
-		if (e>p+4 || e>p && y >= Lines-1)
+		if (e>p+4 || (e>p && y >= Lines-1))
 			e = p-1;
 	}
 	for (; next <= e; ++prev, ++next, ++x) {
@@ -837,7 +836,7 @@ void Screen::scroolScreen ()
 			}
 			for (int i=n; i>0; --i) {
 				short *temp = oldscr[botline];
-				for (y=botline; y>topline; --y)
+				for (int y=botline; y>topline; --y)
 					oldscr[y] = oldscr[y-1];
 				oldscr[topline] = temp;
 			}
@@ -849,7 +848,7 @@ void Screen::scroolScreen ()
 			}
 			for (int i=n; i<0; ++i) {
 				short *temp = oldscr[topline];
-				for (y=topline; y<botline; ++y)
+				for (int y=topline; y<botline; ++y)
 					oldscr[y] = oldscr[y+1];
 				oldscr[botline] = temp;
 			}
@@ -908,7 +907,7 @@ void Screen::moveTo (int y, int x)
 	if (oldx==x && oldy==y)
 		return;
 	if (oldy==y && x>oldx && x<oldx+7) {
-		register short i;
+		short i;
 
 		while (oldx < x) {
 			i = oldscr[oldy][oldx];
@@ -950,6 +949,7 @@ void Screen::Put (int c, int attr)
 		attr = attr<<8 & 0x7f00;
 	else
 		attr = flgs;
+
 	switch (c = (unsigned char) c) {
 	case ULC: case UT: case URC: case CLT: case CX: case CRT:
 	case LLC: case LT: case LRC: case VERT: case HOR:
@@ -959,9 +959,9 @@ void Screen::Put (int c, int attr)
 		pokeChar (cury, curx++, c | attr);
 		return;
 	case '\t':
-		int n = 8 - (curx & 7);
-		while (--n >= 0)
+		for (int n = 8 - (curx & 7); n >= 0; n--) {
 			pokeChar (cury, curx++, ' ' | attr);
+                }
 		return;
 	case '\b':
 		--curx;
@@ -1096,65 +1096,36 @@ void Screen::Clear (int y, int x, int ny, int nx, int attr, int sym)
 		attr = attr<<8 & 0x7f00;
 	else
 		attr = flgs;
-	sym = sym & 0xff | attr;
+	sym = (sym & 0xff) | attr;
 	for (; --ny>=0; ++y)
 		for (int i=nx; --i>=0;)
 			pokeChar (y, x+i, sym);
 }
 
-void Screen::PrintVect (int attr, char *fmt, void *vect)
+void Screen::PrintVect (int attr, const char *fmt, va_list vect)
 {
 	char buf [512];
 
-	vsprintf (buf, fmt, vect);
+	vsnprintf(buf, sizeof(buf), fmt, vect);
 	Put (buf, attr);
 }
 
-#ifdef sparc
-#   include <stdarg.h>
-#   define MAXARGS 256
-
-void Screen::Print (int attr, char *fmt, ...)
+void Screen::Print (int attr, const char *fmt, ...)
 {
-	va_list ap;
-	int argno = 0;
-	char *args [MAXARGS];
-
-	va_start (ap, fmt);
-	while (args [argno++] = va_arg (ap, char *))
-		continue;
-	va_end (ap);
-	PrintVect (attr, fmt, args);
+        va_list ap;
+        va_start(ap, fmt);
+	PrintVect (attr, fmt, ap);
+        va_end(ap);
 }
 
-void Screen::Print (int y, int x, int attr, char *fmt, ...)
+void Screen::Print (int y, int x, int attr, const char *fmt, ...)
 {
-	va_list ap;
-	int argno = 0;
-	char *args [MAXARGS];
-
-	va_start (ap, fmt);
-	while (args [argno++] = va_arg (ap, char *))
-		continue;
-	va_end (ap);
+        va_list ap;
+        va_start(ap, fmt);
 	Move (y, x);
-	PrintVect (attr, fmt, args);
+	PrintVect (attr, fmt, ap);
+        va_end(ap);
 }
-
-#else
-
-void Screen::Print (int attr, char *fmt, ...)
-{
-	PrintVect (attr, fmt, &fmt + 1);
-}
-
-void Screen::Print (int y, int x, int attr, char *fmt, ...)
-{
-	Move (y, x);
-	PrintVect (attr, fmt, &fmt + 1);
-}
-
-#endif
 
 void Screen::HorLine (int y, int x, int nx, int attr)
 {
@@ -1186,7 +1157,7 @@ void Screen::DrawFrame (int y, int x, int ny, int nx, int attr)
 	VertLine (x+nx-1, y+1, ny-2, attr);
 
 	if (attr)
-		attr = attr<<8 & 0x7f00 | GraphAttr;
+		attr = (attr<<8 & 0x7f00) | GraphAttr;
 	else
 		attr = flgs | GraphAttr;
 	unsigned char *sym = HasGraph () ? linedraw : textlinedraw;
@@ -1210,8 +1181,9 @@ void Screen::AttrSet (int y, int x, int ny, int nx, int attr)
 		attr = flgs;
 	for (; --ny>=0; ++y) {
 		short *p = &scr[y][x];
-		for (int xx=0; xx<nx; ++xx, ++p)
-			*p = *p & 0x80ff | attr;
+		for (int xx=0; xx<nx; ++xx, ++p) {
+			*p = (*p & 0x80ff) | attr;
+                }
 		if (firstch[y] == NOCHANGE) {
 			firstch[y] = x;
 			lastch[y] = x+nx-1;

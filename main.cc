@@ -11,17 +11,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef unix
-#   include <unistd.h>
-#   include <sys/time.h>
-#   include <sys/wait.h>
-#else
-#   include <process.h>
-#   include <bios.h>
-extern "C" {
-#   include "tcp.h"
-};
-#endif
+#include <unistd.h>
+#include <sys/time.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <sys/types.h>
 
@@ -151,7 +143,7 @@ void RunShell ()
 	V.Move (0, 0);
 	V.Sync ();
 	V.Restore ();
-#ifdef unix
+
 	char *shell = getenv ("SHELL");
 	if (! shell || *shell != '/')
 		shell = "/bin/sh";
@@ -169,7 +161,7 @@ void RunShell ()
 	if (t > 0) {
 		#ifdef SIGTSTP
 		// Игнорируем suspend, пока ждем завершения шелла.
-		void *oldtstp = signal (SIGTSTP, SIG_IGN);
+		void (*oldtstp)(int) = signal (SIGTSTP, SIG_IGN);
 		#endif
 
 		// Ждем, пока он не отпадет.
@@ -185,14 +177,6 @@ void RunShell ()
 		tcsetpgrp (2, getpid ());
 		#endif
 	}
-#else
-	char *shell = getenv ("COMSPEC");
-	if (! shell)
-		shell = "command.com";
-	if (spawnlp (P_WAIT, shell, shell, 0) != 0)
-		V.Error (ErrorColor, TextColor, " Ошибка ", " Готово ",
-			"Ошибка при выполнении %s", shell);
-#endif
 	V.Reopen ();
 	V.Clear (TextColor);
 	V.Put (box);
@@ -298,7 +282,6 @@ again:
 
 static long msec (int interval)
 {
-#ifdef unix
 	static struct timeval tv0;
 	struct timeval tv;
 
@@ -309,16 +292,10 @@ static long msec (int interval)
 	gettimeofday (&tv, 0);
 	return (tv.tv_sec  - tv0.tv_sec)  * 1000L +
 	       (tv.tv_usec - tv0.tv_usec) / 1000L;
-#else
-	return biostime (0, 0);
-#endif
 }
 
 int main (int argc, char **argv)
 {
-#ifndef unix
-	sock_init ();
-#endif
 	signal (SIGINT, Killed);
 	signal (SIGTERM, Killed);
 #ifdef SIGQUIT
@@ -461,7 +438,8 @@ again:
 	 */
 	int h = 0;
 	int w = 0;
-	for (int i=0; menu[i].button; ++i) {
+	int i;
+	for (i = 0; menu[i].button; ++i) {
 		menu[i].r = h;
 		menu[i].h = menu[i].big ? 3 : 1;
 		h += 1 + menu[i].h;

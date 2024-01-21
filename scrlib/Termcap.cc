@@ -13,6 +13,7 @@
 //
 // #define DEBUG
 
+#include <fcntl.h>
 #include "Screen.h"
 #include "Termcap.h"
 #include "extern.h"
@@ -25,17 +26,17 @@ static char TERMCAP []          = "/etc/termcap";
 static char MYTERMCAP []        = "/usr/lib/deco/termcap";
 static char MYLCLTERMCAP []     = "/usr/local/lib/deco/termcap";
 
-static char *tname;                     // terminal name
-static char *tcapfile;                  // termcap file name
-static char *tbuf;                      // terminal entry buffer
-static char *envtermcap;                // global variable TERMCAP
-static hopcount;                        // detect infinite loops
+static const char *tname;               // terminal name
+static const char *tcapfile;            // termcap file name
+static const char *tbuf;                // terminal entry buffer
+static const char *envtermcap;          // global variable TERMCAP
+static int hopcount;                    // detect infinite loops
 
-static char *tskip (char *);
-static char *tdecode (char *, char **);
-static int tgetent (char *, char *, char *);
+static const char *tskip (const char *);
+static const char *tdecode (const char *, char **);
+static int tgetent (char *, const char *, const char *);
 static int tnchktc ();
-static int tnamatch (char *);
+static int tnamatch (const char *);
 
 int Screen::InitCap (char *bp)
 {
@@ -60,11 +61,11 @@ int Screen::InitCap (char *bp)
 	    tgetent (bp, tname, tcapfile));
 }
 
-static int tgetent (char *bp, char *name, char *termcap)
+static int tgetent (char *bp, const char *name, const char *termcap)
 {
 	int c;
 	int tf = -1;
-	char *cp = envtermcap;
+	const char *cp = envtermcap;
 	tbuf = bp;
 
 	// TERMCAP can have one of two things in it. It can be the
@@ -86,45 +87,40 @@ static int tgetent (char *bp, char *name, char *termcap)
 		tf = open (termcap, 0);
 	if (tf < 0)
 		return (0);
-	char *ibuf = new char [BUFSIZE];
-	if (! ibuf) {
-		close (tf);
-		return (0);
-	}
+
+	char ibuf[BUFSIZE];
 	int i = 0;
 	int cnt = 0;
 	for (;;) {
-		cp = bp;
+		char *p = bp;
 		for (;;) {
 			if (i == cnt) {
 				cnt = read (tf, ibuf, BUFSIZE);
 				if (cnt <= 0) {
 					close (tf);
-					delete ibuf;
 					return (0);
 				}
 				i = 0;
 			}
 			c = ibuf[i++];
 			if (c == '\n') {
-				if (cp > bp && cp[-1] == '\\'){
-					cp--;
+				if (p > bp && p[-1] == '\\'){
+					p--;
 					continue;
 				}
 				break;
 			}
-			if (cp >= bp+BUFSIZE) {
+			if (p >= bp+BUFSIZE) {
 				outerr ("Termcap entry too long\n");
 				break;
 			} else
-				*cp++ = c;
+				*p++ = c;
 		}
-		*cp = 0;
+		*p = 0;
 
 		// The real work for the match.
 		if (tnamatch (name)) {
 			close (tf);
-			delete ibuf;
 			return (tnchktc ());
 		}
 	}
@@ -132,13 +128,14 @@ static int tgetent (char *bp, char *name, char *termcap)
 
 static int tnchktc ()
 {
-	register char *p, *q;
+        char *p;
+	char *q;
 	char tcname [16];       // name of similar terminal
-	char *tcbuf;
-	char *holdtbuf = tbuf;
+	char tcbuf[BUFSIZE];
+	const char *holdtbuf = tbuf;
 	int l;
 
-	p = tbuf + strlen(tbuf) - 2;    // before the last colon
+	p = (char*)tbuf + strlen(tbuf) - 2;    // before the last colon
 	while (*--p != ':')
 		if (p<tbuf) {
 			outerr ("Bad termcap entry\n");
@@ -148,7 +145,7 @@ static int tnchktc ()
 	// p now points to beginning of last field
 	if (p[0] != 't' || p[1] != 'c')
 		return (1);
-	strcpy (tcname,p+3);
+	strcpy (tcname, p+3);
 	q = tcname;
 	while (*q && *q != ':')
 		q++;
@@ -157,14 +154,8 @@ static int tnchktc ()
 		outerr ("Infinite tc= loop\n");
 		return (0);
 	}
-	tcbuf = new char [BUFSIZE];
-	if (! tcbuf) {
-		hopcount = 0;           // unwind recursion
-		return (0);
-	}
 	if (! tgetent (tcbuf, tcname, tcapfile)) {
 		hopcount = 0;           // unwind recursion
-		delete tcbuf;
 		return (0);
 	}
 	for (q=tcbuf; *q != ':'; q++);
@@ -176,13 +167,12 @@ static int tnchktc ()
 	strcpy (p, q+1);
 	tbuf = holdtbuf;
 	hopcount = 0;                   // unwind recursion
-	delete tcbuf;
 	return (1);
 }
 
-static int tnamatch (char *np)
+static int tnamatch (const char *np)
 {
-	register char *Np, *Bp;
+	const char *Np, *Bp;
 
 	Bp = tbuf;
 	if (*Bp == '#')
@@ -200,7 +190,7 @@ static int tnamatch (char *np)
 	}
 }
 
-static char *tskip (char *bp)
+static const char *tskip (const char *bp)
 {
 	while (*bp && *bp != ':')
 		bp++;
@@ -211,9 +201,9 @@ static char *tskip (char *bp)
 
 void Screen::GetCap (struct Captab *t)
 {
-	register char *bp;
-	register struct Captab *p;
-	register i, base;
+	const char *bp;
+	struct Captab *p;
+	int i, base;
 	char name [2];
 	char *area, *begarea;
 
@@ -265,15 +255,15 @@ void Screen::GetCap (struct Captab *t)
 			break;
 		}
 	}
-	bp = new char [area - begarea];
-	if (! bp) {
+	char *np = new char [area - begarea];
+	if (! np) {
 		delete begarea;
 		return;
 	}
-	memcpy (bp, begarea, area - begarea);
+	memcpy (np, begarea, area - begarea);
 	for (p=t; p->tname[0]; ++p)
 		if (p->ttype == CAPSTR && *(p->ts))
-			*(p->ts) += bp - begarea;
+			*(p->ts) += np - begarea;
 	delete begarea;
 #ifdef DEBUG
 	for (p=t; p->tname[0]; ++p) {
@@ -296,11 +286,11 @@ void Screen::GetCap (struct Captab *t)
 #endif
 }
 
-static char *tdecode (char *str, char **area)
+static const char *tdecode (const char *str, char **area)
 {
-	register char *cp;
-	register int c;
-	register char *dp;
+	char *cp;
+	int c;
+	const char *dp;
 	int i;
 
 	cp = *area;

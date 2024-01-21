@@ -21,6 +21,5 @@ struct Captab {
 	char tdef;
 	char *tc;
 	int *ti;
-	char **ts;
+	const char **ts;
 };
-

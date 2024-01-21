@@ -40,8 +40,6 @@
 #define KEY_F0          KEY_F(10)       /* Function keys */
 #define KEY_F(n)        ((0400 | 'A') + (n) - 1)
 
-#define getch curses_getch /* to avoid name conflict with msdos getch() */
-
 extern int LINES, COLS;
 
 int _gety (void), _getx (void);
@@ -70,8 +68,8 @@ int eraseframe (int y, int x, int ny, int nx);
 int putbox (WINDOW_BOX *box);
 int deletebox (WINDOW_BOX *box);
 void clearok (WINDOW *win, int flag);
-int printw (char *fmt, ...);
-int mvprintw (int y, int x, char *fmt, ...);
+int printw (const char *fmt, ...);
+int mvprintw (int y, int x, const char *fmt, ...);
 
 #define curscr          ((WINDOW*) 0)
 #define stdscr          ((WINDOW*) 0)

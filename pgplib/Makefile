@@ -37,24 +37,12 @@ clean:
 	$(CC) $(CRFLAGS) -c $< -o $*.ro
 
 ###
-idea.o: idea.c /usr/include/string.h /usr/include/machine/ansi.h \
-  /usr/include/sys/cdefs.h idea.h usuals.h randpool.h
+idea.o: idea.c idea.h usuals.h randpool.h
 libnul.o: libnul.c pgplib.h
-libpgp.o: libpgp.c /usr/include/stdio.h /usr/include/sys/types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h \
-  /usr/include/ctype.h /usr/include/runetype.h /usr/include/unistd.h \
-  /usr/include/sys/unistd.h mpilib.h /usr/include/string.h usuals.h mpiio.h \
-  idea.h md5.h pgplib.h randpool.h
-md5.o: md5.c /usr/include/string.h /usr/include/machine/ansi.h \
-  /usr/include/sys/cdefs.h md5.h
-mpiio.o: mpiio.c /usr/include/stdio.h /usr/include/sys/types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/endian.h \
-  /usr/include/machine/ansi.h /usr/include/machine/types.h mpilib.h \
-  /usr/include/string.h usuals.h mpiio.h
-mpilib.o: mpilib.c mpilib.h /usr/include/string.h /usr/include/machine/ansi.h \
-  /usr/include/sys/cdefs.h usuals.h
-randpool.o: randpool.c /usr/include/stdlib.h /usr/include/machine/ansi.h \
-  /usr/include/sys/cdefs.h /usr/include/string.h randpool.h usuals.h md5.h
-rsaglue1.o: rsaglue1.c /usr/include/string.h /usr/include/machine/ansi.h \
-  /usr/include/sys/cdefs.h mpilib.h usuals.h mpiio.h
+libpgp.o: libpgp.c mpilib.h usuals.h mpiio.h idea.h md5.h pgplib.h \
+  randpool.h
+md5.o: md5.c md5.h
+mpiio.o: mpiio.c mpilib.h usuals.h mpiio.h
+mpilib.o: mpilib.c mpilib.h usuals.h
+randpool.o: randpool.c randpool.h usuals.h md5.h
+rsaglue1.o: rsaglue1.c mpilib.h usuals.h mpiio.h
