@@ -126,6 +126,7 @@ int endwin()
 {
     if (!V)
         fatal();
+    V->Restore();
     if (keypad) {
         V->Close();
         keypad = 0;

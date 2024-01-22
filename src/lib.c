@@ -610,8 +610,10 @@ int deas_init(char *hostdir, int port, void (*fatal)(char *))
 
     if (!hostdir)
         hostdir = WORKDIR;
-    if (chdir(hostdir) < 0)
+    if (chdir(hostdir) < 0) {
+        perror(hostdir);
         goto failed;
+    }
 
     /* Читаем план счетов, таблицу юзеров, журнал. */
     crypt_init("D0blen1r9cun19s1em");

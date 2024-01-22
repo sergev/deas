@@ -33,6 +33,7 @@ int main()
     move(LINES - 1, 0);
     refresh();
     endwin();
+
     initscr();
     mvaddstr(LINES / 2 - 3, COLS / 2 - 9, "Hello, World!");
     attrset(A_REVERSE);

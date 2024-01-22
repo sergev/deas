@@ -14,7 +14,6 @@
 // #define DEBUG
 // #define INITFILE             // send 'if' on display open
 // #define STRINIT              // send 'is' on display open
-// #define NOKEYPAD             // don't use 'ks', 'ke'
 
 #include "Screen.h"
 
@@ -34,13 +33,9 @@ static int NF, NB, LINES, COLS;
 static const char *AS, *AE, *AC, *GS, *GE, *G1, *G2;
 static char *GT;
 static const char *CS, *SF, *SR;
-static const char *CL, *CE, *CM, *SE, *SO, *TE, *TI, *VI, *VE, *VS;
+static const char *CL, *CE, *CM, *SE, *SO;
 static const char *AL, *DL, *FS, *MD, *MH, *ME, *MR;
 static const char *CF, *CB, *MF, *MB;
-
-#ifndef NOKEYPAD
-static const char *KS, *KE;
-#endif
 
 #ifdef CYRILLIC
 static char Cy;
@@ -71,15 +66,6 @@ static struct Captab outtab[] = {
     { "mh", CAPSTR, 0, 0, 0, &MH, },
     { "mr", CAPSTR, 0, 0, 0, &MR, },
     { "me", CAPSTR, 0, 0, 0, &ME, },
-    { "te", CAPSTR, 0, 0, 0, &TE, },
-    { "ti", CAPSTR, 0, 0, 0, &TI, },
-    { "vi", CAPSTR, 0, 0, 0, &VI, },
-    { "vs", CAPSTR, 0, 0, 0, &VS, },
-    { "ve", CAPSTR, 0, 0, 0, &VE, },
-#ifndef NOKEYPAD
-    { "ks", CAPSTR, 0, 0, 0, &KS, },
-    { "ke", CAPSTR, 0, 0, 0, &KE, },
-#endif
     { "al", CAPSTR, 0, 0, 0, &AL, },
     { "dl", CAPSTR, 0, 0, 0, &DL, },
     { "fs", CAPSTR, 0, 0, 0, &FS, },
@@ -363,6 +349,14 @@ int Screen::Init()
             SO = skipDelay(MR);
     }
 
+    // Force ANSI colors.
+    NF = 16;
+    NB = 8;
+    MF = "042615378CAE9DBF";
+    MB = "04261537";
+    CF = "\033[%p1%{8}%/%d;3%p1%{8}%m%d;4%p2%dm";
+    C2 = 1;
+
     Visuals = 0;
     if (NF > 0 && NB > 0 && CF && (CB || C2))
         Visuals |= VisualColors;
@@ -540,12 +534,6 @@ void Screen::Open()
     screenptr = this;
     signal(SIGTSTP, _Screen_tstp);
 #endif
-    if (TI)
-        putStr(TI);
-#ifndef NOKEYPAD
-    if (KS)
-        putStr(KS);
-#endif
 }
 
 void Screen::Reopen()
@@ -553,12 +541,6 @@ void Screen::Reopen()
     SetTty();
 #ifdef SIGTSTP
     signal(SIGTSTP, _Screen_tstp);
-#endif
-    if (TI)
-        putStr(TI);
-#ifndef NOKEYPAD
-    if (KS)
-        putStr(KS);
 #endif
 }
 
@@ -571,12 +553,6 @@ void Screen::Close()
 #endif
     if (FS)
         putStr(FS);
-    if (TE)
-        putStr(TE);
-#ifndef NOKEYPAD
-    if (KE)
-        putStr(KE);
-#endif
     Flush();
     ResetTty();
 #ifdef SIGTSTP
@@ -595,12 +571,6 @@ void Screen::Restore()
 #ifdef STRINIT
     if (FS)
         putStr(FS);
-#endif
-    if (TE)
-        putStr(TE);
-#ifndef NOKEYPAD
-    if (KE)
-        putStr(KE);
 #endif
     Flush();
     ResetTty();
@@ -1045,8 +1015,6 @@ void Screen::Sync()
     }
     if (!hidden && curx >= 0 && curx < Columns)
         moveTo(cury, curx);
-    else if (VI)
-        putStr(VI);
     else
         moveTo(Lines - 1, Columns - 1);
     if (beepflag) {
