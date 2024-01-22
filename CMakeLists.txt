@@ -17,7 +17,7 @@ set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
 # the RPATH to be used when installing
-set(CMAKE_INSTALL_RPATH "")
+set(CMAKE_INSTALL_RPATH "") # "
 
 # don't add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -33,7 +33,8 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-#TODO: set(CMAKE_CXX_FLAGS "-Wall -Werror")
+set(CMAKE_C_FLAGS "-Werror -Wno-deprecated-declarations") #TODO: -Wall
+set(CMAKE_CXX_FLAGS "-Werror") #TODO: -Wall
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O")
 

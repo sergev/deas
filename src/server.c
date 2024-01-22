@@ -302,8 +302,9 @@ int authenticate(int sock, char *data, int len)
         send_packet(sock, (char *)&result, sizeof(long));
         if (debug)
             fprintf(stderr, "Registration failed\n");
-        len = sizeof(client);
-        getsockname(sock, (struct sockaddr *)&client, &len);
+
+        socklen_t address_len = sizeof(client);
+        getsockname(sock, (struct sockaddr *)&client, &address_len);
         syslog(LOG_NOTICE, "%s - authentication error", inet_ntoa(client.sin_addr));
         memset(clnt, 0, sizeof(*clnt));
         return 0;
@@ -330,17 +331,17 @@ int authenticate(int sock, char *data, int len)
 
 static void process(int sock)
 {
-    char data[8192], *result, *name, *(*local)();
+    char data[8192], *result, *name;
+    char *(*local)(char*, clientinfo*);
     clientinfo *clnt = cltab + sock;
     struct deas_req req;
     struct deas_reply reply;
     struct sockaddr_in client;
     int argsz, resultsz;
-    int len;
+    socklen_t address_len = sizeof(client);
 
-    len = sizeof(client);
-    getsockname(sock, (struct sockaddr *)&client, &len);
-    len = receive_packet(sock, data, sizeof(data));
+    getsockname(sock, (struct sockaddr *)&client, &address_len);
+    int len = receive_packet(sock, data, sizeof(data));
     if (len < 4) {
     closeit:
         close(sock);
@@ -367,133 +368,133 @@ static void process(int sock)
         name = "OPTION_DATE";
         argsz = sizeof(long);
         resultsz = sizeof(long);
-        local = (char *(*)())option_date_1;
+        local = (char *(*)(char*, clientinfo*))option_date_1;
         break;
     case OPTION_DELETED:
         name = "OPTION_DELETED";
         argsz = sizeof(long);
         resultsz = sizeof(long);
-        local = (char *(*)())option_deleted_1;
+        local = (char *(*)(char*, clientinfo*))option_deleted_1;
         break;
     case CHART_FIRST:
         name = "CHART_FIRST";
         argsz = 0;
         resultsz = sizeof(account_reply);
-        local = (char *(*)())chart_first_1;
+        local = (char *(*)(char*, clientinfo*))chart_first_1;
         break;
     case CHART_NEXT:
         name = "CHART_NEXT";
         argsz = 0;
         resultsz = sizeof(account_reply);
-        local = (char *(*)())chart_next_1;
+        local = (char *(*)(char*, clientinfo*))chart_next_1;
         break;
     case CHART_INFO:
         name = "CHART_INFO";
         argsz = sizeof(long);
         resultsz = sizeof(account_reply);
-        local = (char *(*)())chart_info_1;
+        local = (char *(*)(char*, clientinfo*))chart_info_1;
         break;
     case CHART_ADD:
         name = "CHART_ADD";
         argsz = sizeof(accountinfo);
         resultsz = 0;
-        local = (char *(*)())chart_add_1;
+        local = (char *(*)(char*, clientinfo*))chart_add_1;
         break;
     case CHART_EDIT:
         name = "CHART_EDIT";
         argsz = sizeof(accountinfo);
         resultsz = 0;
-        local = (char *(*)())chart_edit_1;
+        local = (char *(*)(char*, clientinfo*))chart_edit_1;
         break;
     case CHART_DELETE:
         name = "CHART_DELETE";
         argsz = sizeof(long);
         resultsz = 0;
-        local = (char *(*)())chart_delete_1;
+        local = (char *(*)(char*, clientinfo*))chart_delete_1;
         break;
     case ACCOUNT_FIRST:
         name = "ACCOUNT_FIRST";
         argsz = sizeof(long);
         resultsz = sizeof(entry_reply);
-        local = (char *(*)())account_first_1;
+        local = (char *(*)(char*, clientinfo*))account_first_1;
         break;
     case ACCOUNT_NEXT:
         name = "ACCOUNT_NEXT";
         argsz = 0;
         resultsz = sizeof(entry_reply);
-        local = (char *(*)())account_next_1;
+        local = (char *(*)(char*, clientinfo*))account_next_1;
         break;
     case ACCOUNT_BALANCE:
         name = "ACCOUNT_BALANCE";
         argsz = sizeof(long);
         resultsz = sizeof(balance_reply);
-        local = (char *(*)())account_balance_1;
+        local = (char *(*)(char*, clientinfo*))account_balance_1;
         break;
     case ACCOUNT_REPORT:
         name = "ACCOUNT_REPORT";
         argsz = sizeof(long);
         resultsz = sizeof(report_reply);
-        local = (char *(*)())account_report_1;
+        local = (char *(*)(char*, clientinfo*))account_report_1;
         break;
     case JOURNAL_FIRST:
         name = "JOURNAL_FIRST";
         argsz = 0;
         resultsz = sizeof(entry_reply);
-        local = (char *(*)())journal_first_1;
+        local = (char *(*)(char*, clientinfo*))journal_first_1;
         break;
     case JOURNAL_NEXT:
         name = "JOURNAL_NEXT";
         argsz = 0;
         resultsz = sizeof(entry_reply);
-        local = (char *(*)())journal_next_1;
+        local = (char *(*)(char*, clientinfo*))journal_next_1;
         break;
     case JOURNAL_INFO:
         name = "JOURNAL_INFO";
         argsz = sizeof(long);
         resultsz = sizeof(entry_reply);
-        local = (char *(*)())journal_info_1;
+        local = (char *(*)(char*, clientinfo*))journal_info_1;
         break;
     case JOURNAL_ADD:
         name = "JOURNAL_ADD";
         argsz = sizeof(entryinfo);
         resultsz = 0;
-        local = (char *(*)())journal_add_1;
+        local = (char *(*)(char*, clientinfo*))journal_add_1;
         break;
     case JOURNAL_EDIT:
         name = "JOURNAL_EDIT";
         argsz = sizeof(entryinfo);
         resultsz = 0;
-        local = (char *(*)())journal_edit_1;
+        local = (char *(*)(char*, clientinfo*))journal_edit_1;
         break;
     case JOURNAL_DELETE:
         name = "JOURNAL_DELETE";
         argsz = sizeof(long);
         resultsz = 0;
-        local = (char *(*)())journal_delete_1;
+        local = (char *(*)(char*, clientinfo*))journal_delete_1;
         break;
     case USER_FIRST:
         name = "USER_FIRST";
         argsz = 0;
         resultsz = sizeof(user_reply);
-        local = (char *(*)())user_first_1;
+        local = (char *(*)(char*, clientinfo*))user_first_1;
         break;
     case USER_NEXT:
         name = "USER_NEXT";
         argsz = 0;
         resultsz = sizeof(user_reply);
-        local = (char *(*)())user_next_1;
+        local = (char *(*)(char*, clientinfo*))user_next_1;
         break;
     case MENU_FIRST:
         name = "MENU_FIRST";
         argsz = 0;
         resultsz = sizeof(menu_reply);
-        local = (char *(*)())menu_first_1;
+        local = (char *(*)(char*, clientinfo*))menu_first_1;
         break;
     case MENU_NEXT:
         name = "MENU_NEXT";
         argsz = 0;
         resultsz = sizeof(menu_reply);
-        local = (char *(*)())menu_next_1;
+        local = (char *(*)(char*, clientinfo*))menu_next_1;
         break;
     default:
         if (debug)
@@ -555,7 +556,7 @@ int main(int argc, char **argv)
         daemon(0, 0);
 
     deas_init(dir, 0, fatal);
-    counter = time((time_t)0);
+    counter = time(NULL);
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
@@ -580,7 +581,9 @@ int main(int argc, char **argv)
         }
         if (!sel)
             continue;
-        if (FD_ISSET(sock, &readfds) && (sel = accept(sock, (struct sockaddr *)&client, &i)) >= 0) {
+
+        socklen_t address_len;
+        if (FD_ISSET(sock, &readfds) && (sel = accept(sock, (struct sockaddr *)&client, &address_len)) >= 0) {
             /* Новое соединение */
             if (debug)
                 fprintf(stderr, "New connection at %d\n", sel);

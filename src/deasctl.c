@@ -7,8 +7,6 @@
 #include "mpilib.h"
 #include "pgplib.h"
 
-// #define countbytes(r) ((countbits(r)+7)>>3)
-
 char pn[KEYSZ], pe[KEYSZ];
 char sn[KEYSZ], se[KEYSZ];
 char sd[KEYSZ], sp[KEYSZ];

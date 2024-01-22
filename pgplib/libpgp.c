@@ -468,7 +468,7 @@ int public_encrypt(void *fp, void *tp, int len, char *username)
         n = q - 4;
         if (n > len)
             n = len;
-        err = rsa_public_encrypt(to, from, n, E, N);
+        err = rsa_public_encrypt((byte*)to, (byte*)from, n, (byte*)E, (byte*)N);
         if (err)
             return -1;
         to += q;
@@ -490,12 +490,12 @@ int private_encrypt(void *fp, void *tp, int len, char *username, char *password)
 
     /* Calculate the hash */
     MD5Init(&mdContext);
-    MD5Update(&mdContext, password, strlen(password));
-    MD5Final(passwd, &mdContext);
+    MD5Update(&mdContext, (byte*)password, strlen(password));
+    MD5Final((byte*)passwd, &mdContext);
 
     set_precision(bytes2units(64));
     strncpy(userid, username, MAX_BYTE_PRECISION);
-    err = getsecretkey(passwd, crypt_secfile, userid, N, E, D, P, Q, U);
+    err = getsecretkey((byte*)passwd, crypt_secfile, userid, N, E, D, P, Q, U);
     if (err < 0)
         return err;
 
@@ -541,7 +541,7 @@ int private_decrypt(void *fp, void *tp, int len, char *E, char *D, char *P, char
     set_precision(bytes2units(64));
     q = countbytes((void *)N);
     for (outlen = 0; len > 0; outlen += n) {
-        n = rsa_private_decrypt(to, from, E, D, P, Q, U, N);
+        n = rsa_private_decrypt((byte*)to, (byte*)from, (byte*)E, (byte*)D, (byte*)P, (byte*)Q, (byte*)U, (byte*)N);
         if (n <= 0)
             return -1;
         to += n;
@@ -555,7 +555,7 @@ void block_encrypt(void *from, void *to, int len, char *key)
 {
     struct IdeaCfbContext cfb;
 
-    ideaCfbInit(&cfb, key);
+    ideaCfbInit(&cfb, (const byte*)key);
     ideaCfbEncrypt(&cfb, from, to, len);
     ideaCfbDestroy(&cfb);
 }
@@ -564,7 +564,7 @@ void block_decrypt(void *from, void *to, int len, char *key)
 {
     struct IdeaCfbContext cfb;
 
-    ideaCfbInit(&cfb, key);
+    ideaCfbInit(&cfb, (const byte*)key);
     ideaCfbDecrypt(&cfb, from, to, len);
     ideaCfbDestroy(&cfb);
 }
@@ -573,7 +573,7 @@ static struct IdeaCfbContext iocfb;
 
 void crypt_init(char *key)
 {
-    ideaCfbInit(&iocfb, key);
+    ideaCfbInit(&iocfb, (const byte*)key);
 }
 
 int crypt_read(int fd, void *buf, int len)
@@ -585,7 +585,7 @@ int crypt_read(int fd, void *buf, int len)
     len = read(fd, iobuf, len);
     if (len > 0) {
         ideaCfbReinit(&iocfb, 0);
-        ideaCfbDecrypt(&iocfb, iobuf, buf, len);
+        ideaCfbDecrypt(&iocfb, (const byte*)iobuf, buf, len);
     }
     return len;
 }
@@ -597,7 +597,7 @@ int crypt_write(int fd, void *buf, int len)
     if (len > sizeof(iobuf))
         len = sizeof(iobuf);
     ideaCfbReinit(&iocfb, 0);
-    ideaCfbEncrypt(&iocfb, buf, iobuf, len);
+    ideaCfbEncrypt(&iocfb, buf, (byte*)iobuf, len);
     return write(fd, iobuf, len);
 }
 
